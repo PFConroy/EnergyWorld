@@ -1,0 +1,1066 @@
+def Main ( ) :
+	global	NumSimulations , NumTicksEachSimulation , SimTick , \
+			TimeError , SimError , EnergyError , PopulationError , \
+			PrintFlow
+#
+	import math
+	import random
+#
+	print "Start"
+	InitializeMonitoring ( )
+	CharacterizeTime ( )
+	if not TimeError :
+		CharacterizeSimulations ( )
+		if not SimError :
+			CharacterizeEnergy ( )
+			if not EnergyError:
+				for SimulationID in range ( 0 , NumSimulations ) :
+					CharacterizePopulation ( )
+					if not PopulationError :
+						GenerateAgents ( )
+						for SimTick in range ( 0 , NumTicksEachSimulation ) :
+#							RandomizeClaimsAndAllocationsOrder ( )
+							CalculateAgentsClaims ( )
+							AllocateEnergyToAgents ( )
+#							InterAgentDiscussions ( )
+#							AssessWorldViews ( )
+#							AdjustWorldViews ( )
+#							AdjustPopulation ( )
+#							DisplayWorld ( )
+	print "End"
+
+def InitializeMonitoring ( ) :
+#
+# This function sets error flags and diagnostic indicators.
+#
+	global	TimeError , EnergyError , SimError , AgeGenderError , BirthsDeathsError , BDIPError , BiasesError , AffinitiesError , NeedsError , PopulationError , \
+			PrintFlow
+# Get/set monitor/control flags.
+	PrintFlow 					= True
+	TimeError					= False
+	EnergyError					= False
+	SimError					= False
+	AgeGenderError				= False
+	BirthsDeathsError			= False
+	BDIPError					= False
+	BiasesError					= False
+	AffinitiesError				= False
+	NeedsError					= False
+	PopulationError				= False
+#
+	if PrintFlow : print "   InitiatlizeMonitoring"
+
+def CharacterizeTime ( ) :
+#
+# This function provides all parameters basic to all time-focused data and processes.
+#
+	global 	MemoryTicks , NumMessagesPerTick , NumMessagesPerBatch , \
+			TimeError , \
+			PrintFlow
+#
+	if PrintFlow: print "   CharacterizeTime"
+# Get/set data.
+	MemoryTicks 			= 3
+	NumMessagesPerTick 		= 100
+	NumMessagesPerBatch 	= 10
+#
+# Verify/validate data.
+#
+	TimeError = False
+	if	( not ( isinstance( MemoryTicks ,			int ) and MemoryTicks			>= 0 ) ) 	or \
+		( not ( isinstance( NumMessagesPerTick , 	int ) and NumMessagesPerTick 	>= 0 ) )	or \
+		( not ( isinstance( NumMessagesPerBatch , 	int ) and NumMessagesPerBatch 	>= 0 ) ) 	: TimeError = True
+	if TimeError : print "WARNING: Error in Time spec. Simulation will halt."
+
+def CharacterizeSimulations ( ) :
+#
+# This function will be enhanced to provide for suites of simulations, eg Monte Carlo. At this point it specifies that a single simulation scenario should be run.
+#
+	global 	NumSimulations , NumTicksEachSimulation , \
+			SimError , \
+			PrintFlow
+#
+	if PrintFlow: print "   CharacterizeSimulations"
+#
+	SimError 				= False
+	NumSimulations 			= 1
+	NumTicksEachSimulation	= 3
+#
+	if	( not ( isinstance( NumSimulations ,			int ) and NumSimulations			> 0 ) ) 	or \
+		( not ( isinstance( NumTicksEachSimulation , 	int ) and NumTicksEachSimulation 	> 0 ) )		: SimError = True
+	if SimError : print "WARNING: Error in Simulation spec. Simulation will halt."
+	
+def CharacterizeEnergy ( ) :
+#
+# This function develops a complete schedule of energy to be supplied to EnergyWorld's population.
+#
+# Takes as input (Tick,Factor) tuples..
+# All values must be numbers > 0; Factor value either integer or float.
+# Tuples must have progressively increasing Ticks with progressively increasing Cycles.
+# CalculateAgentClaims will fill out EnergySupply to better support CalculateClaims, .
+#
+	global 	EnergySupplySpec , EnergySupplyFactors , NumTicksEachSimulation , \
+			EnergyError , \
+			ParameterizationError
+#
+	if PrintFlow: print "   CharacterizeEnergy"
+# Get/set data.
+	EnergySupplySpec = list ( )
+	EnergySupplySpec = [ \
+		( 0 , 1.0 ) , 	\
+		( 6 , 0.7 ) , 	\
+		( 12 , 1.0 ) , 	\
+		( 13 , 0.8 ) , 	\
+		( 6 , 0.7 ) , 	\
+		( 9 , 0.6 )		]
+#
+# Verify/validate data.
+#
+	for SpecIndex in range ( 0 , len ( EnergySupplySpec ) ) :
+		if	( not ( isinstance( EnergySupplySpec [ SpecIndex ] [ 0 ] , int )	and EnergySupplySpec [ SpecIndex ] [ 0 ] >= 	0 	) )						or \
+			( not ( isinstance( EnergySupplySpec [ SpecIndex ] [ 1 ] , float ) 	and EnergySupplySpec [ SpecIndex ] [ 1 ] >= 	0.0 ) )						: EnergyError = True
+	if EnergyError : print "WARNING: Error in Energy spec. The simulation will hatl."
+#
+	EnergySupplyFactors 			= list( )
+	for SpecIndex in range ( 0 , len( EnergySupplySpec ) ) :
+		Factor 						= EnergySupplySpec [ SpecIndex ] [ 1 ]
+		SameFactorTickLow 			= EnergySupplySpec [ SpecIndex ] [ 0 ]
+		SameFactorTickHigh 			= NumTicksEachSimulation
+		if SpecIndex < len( EnergySupplySpec ) - 1 :
+			 SameFactorTickHigh 	= EnergySupplySpec [ SpecIndex + 1 ] [ 0 ]
+		for TickIndex in range ( SameFactorTickLow , SameFactorTickHigh ) :
+			EnergySupplyFactors 	. append( Factor )
+
+def CharacterizePopulation ( ) :
+#
+# This function acquires age/gender, births/deaths, beliefs/desires/intentions/powers, affinities, needs, and biases data for generating EnergyWorld's starting population.
+#
+# The commented-out code block immediately below is a suggestion for how to acquire data from a file. It has not been tested and may not be correct.
+# Other methods for acquiring data, e.g. from other EnergyWorld functions and from the user in real time, have not yet been explored.
+#
+	global	PopulationError , \
+			PrintFlow
+#
+	if PrintFlow : print "   CharacterizePopulation"
+#
+	if not ( TimeError or EnergyError or SimError ) :
+		PopulationError = True
+		GetAndCheckAgeGenderData ( )
+		if not AgeGenderError :
+			GetAndCheckBirthsDeathsData ( )
+			if not BirthsDeathsError :
+				GetAndCheckBeliefsDesiresIntentionsPowersData ( )
+				if not BDIPError :
+					GetAndCheckBiasesData ( )
+					if not BiasesError :
+						GetAndCheckAffinitiesData ( )
+						if not AffinitiesError :
+							GetAndCheckNeedsData ( )
+							PopulationError = False
+	if PopulationError :
+		print "WARNING: Error in Population spec. Simulation will halt."
+
+def GetAndCheckAgeGenderData ( ) :
+#
+# Hand-crafted data is supplied for test purposes. Replace with file input, other function outputs, or real-time user input when code is stabilized.
+# Notes:
+#	ApproximateStartingPopulation is used to generate EnergyWorld's starting population as multiples of the population defined by NominalPopulationSpec.
+#	(ActualStartingPopulation will be the multiple of len(WorldViewCombinations) that is greater than or equal to ApproximateStartingPosition.)
+#	MaxTick is the age after which Agents will be deleted from EnergyWorld.
+#	RetirementTick is used in making some energy claims in CalculateAgentsClaims.
+#	MaturityTick is the age at Agents begin to make assessments and adjustments to their worldviews.
+#	NominalPopulationSpec is the basis for EnergyWorld's starting population. It specifies the relative number of males and females for each age from 0 through MaxAge.
+#
+	global	ApproximateStartingPopulationSize , AbsoluteMaximumPopulationSize , \
+			MaxTick , RetirementTick , MaturityTick , MalePopulationFraction , PopulationCountBasis , NominalPopulationSpec , \
+			AgeGenderError , \
+			PrintFlow
+#
+	import math
+#
+	if PrintFlow: print "      AgeGenderData"
+# Get/set data.
+	ApproximateStartingPopulationSize 	= 10 # Almost ignored in favor of WorldView, AgeGender and NominalPopulation factors.
+	AbsoluteMaximumPopulationSize		= 160000
+#	print "         PopulationGuide" , ApproximateStartingPopulationSize
+	MaxTick								= 99
+	RetirementTick 						= 65
+	MaturityTick 						= 18
+	NominalPopulationSpec 				= list ( ) # From http://www.statcan.gc.ca/tables-tableaux/sum-som/l01/cst01/demo10a-eng.htm
+	PopulationCountBasis 				= 0.2 * 0.01 # StatsCan data shows total % for 5-year periods.
+	NominalPopulationSpec = [ \
+		( 0  , 5.6 , 5.3 ) , ( 1  , 5.6 , 5.3 ) , ( 2  , 5.6 , 5.3 ) , ( 3  , 5.6 , 5.3 ) , ( 4  , 5.6 , 5.3 ) , \
+		( 5  , 5.5 , 5.2 ) , ( 6  , 5.5 , 5.2 ) , ( 7  , 5.5 , 5.2 ) , ( 8  , 5.5 , 5.2 ) , ( 9  , 5.5 , 5.2 ) , \
+		( 10 , 5.5 , 5.1 ) , ( 11 , 5.5 , 5.1 ) , ( 12 , 5.5 , 5.1 ) , ( 13 , 5.5 , 5.1 ) , ( 14 , 5.5 , 5.1 ) , \
+		( 15 , 6.4 , 6.0 ) , ( 16 , 6.4 , 6.0 ) , ( 17 , 6.4 , 6.0 ) , ( 18 , 6.4 , 6.0 ) , ( 19 , 6.4 , 6.0 ) , \
+		( 20 , 7.1 , 6.8 ) , ( 21 , 7.1 , 6.8 ) , ( 22 , 7.1 , 6.8 ) , ( 23 , 7.1 , 6.8 ) , ( 24 , 1.1 , 6.8 ) , \
+		( 25 , 6.9 , 6.8 ) , ( 26 , 6.9 , 6.8 ) , ( 27 , 6.9 , 6.8 ) , ( 28 , 6.9 , 6.8 ) , ( 29 , 6.9 , 6.8 ) , \
+		( 30 , 7.0 , 6.9 ) , ( 31 , 7.0 , 6.9 ) , ( 32 , 7.0 , 6.9 ) , ( 33 , 7.0 , 6.9 ) , ( 34 , 7.0 , 6.9 ) , \
+		( 35 , 6.7 , 6.6 ) , ( 36 , 6.7 , 6.6 ) , ( 37 , 6.7 , 6.6 ) , ( 38 , 6.7 , 6.6 ) , ( 39 , 6.7 , 6.6 ) , \
+		( 40 , 6.8 , 6.7 ) , ( 41 , 6.8 , 6.7 ) , ( 42 , 6.8 , 6.7 ) , ( 43 , 6.8 , 6.7 ) , ( 44 , 6.8 , 6.7 ) , \
+		( 45 , 7.4 , 7.2 ) , ( 46 , 7.4 , 7.2 ) , ( 47 , 7.4 , 7.2 ) , ( 48 , 7.4 , 7.2 ) , ( 49 , 7.4 , 7.2 ) , \
+		( 50 , 7.9 , 7.7 ) , ( 51 , 7.9 , 7.7 ) , ( 52 , 7.9 , 7.7 ) , ( 53 , 7.9 , 7.7 ) , ( 54 , 7.9 , 7.7 ) , \
+		( 55 , 7.2 , 7.1 ) , ( 56 , 7.2 , 7.1 ) , ( 57 , 7.2 , 7.1 ) , ( 58 , 7.2 , 7.1 ) , ( 59 , 7.2 , 7.1 ) , \
+		( 60 , 6.0 , 6.0 ) , ( 61 , 6.0 , 6.0 ) , ( 62 , 6.0 , 6.0 ) , ( 63 , 6.0 , 6.0 ) , ( 64 , 6.0 , 6.0 ) , \
+		( 65 , 4.9 , 5.1 ) , ( 66 , 4.9 , 5.1 ) , ( 67 , 4.9 , 5.1 ) , ( 68 , 4.9 , 5.1 ) , ( 69 , 4.9 , 5.1 ) , \
+		( 70 , 3.4 , 3.7 ) , ( 71 , 3.4 , 3.7 ) , ( 72 , 3.4 , 3.7 ) , ( 73 , 3.4 , 3.7 ) , ( 74 , 3.4 , 3.7 ) , \
+		( 75 , 2.5 , 2.9 ) , ( 76 , 2.5 , 2.9 ) , ( 77 , 2.5 , 2.9 ) , ( 78 , 2.5 , 2.9 ) , ( 79 , 2.5 , 2.9 ) , \
+		( 80 , 1.8 , 2.4 ) , ( 81 , 1.8 , 2.4 ) , ( 82 , 1.8 , 2.4 ) , ( 83 , 1.8 , 2.4 ) , ( 84 , 1.8 , 2.4 ) , \
+		( 85 , 0.9 , 1.6 ) , ( 86 , 0.9 , 1.6 ) , ( 87 , 0.9 , 1.6 ) , ( 88 , 0.9 , 1.6 ) , ( 89 , 0.9 , 1.6 ) , \
+		( 90 , 0.4 , 1.0 ) , ( 91 , 0.4 , 1.0 ) , ( 92 , 0.4 , 1.0 ) , ( 93 , 0.4 , 1.0 ) , ( 94 , 0.4 , 1.0 ) , \
+		( 95 , 0.4 , 1.0 ) , ( 96 , 0.4 , 1.0 ) , ( 97 , 0.4 , 1.0 ) , ( 98 , 0.4 , 1.0 ) , ( 99 , 0.4 , 1.0 )   ]
+#
+	NumMales 				= 0
+	NumFemales 				= 0
+	NumAll					= 0
+	for PopIndex in range( 0 , len( NominalPopulationSpec ) ) :
+		NumMales 			= NumMales + NominalPopulationSpec [ PopIndex ] [ 1 ]
+		NumFemales 			= NumFemales + NominalPopulationSpec [ PopIndex ] [ 2 ]
+		NumAll				= NumAll + NominalPopulationSpec [ PopIndex ] [ 1 ] + NominalPopulationSpec [ PopIndex ] [ 2 ]
+	MalePopulationFraction 	= float( NumMales ) / float( NumAll ) # StatsCan average for past 5 years = 0.495.
+#
+# Verify/validate data.
+#
+	AgeGenderError = False
+	if	( not ( isinstance( ApproximateStartingPopulationSize , 			int ) 	and ApproximateStartingPopulationSize 			> 0 ) ) 	or \
+	   	( not ( isinstance( MaxTick , 										int )	and MaxTick 									> 0 ) ) 	or \
+		( not ( isinstance( RetirementTick , 								int )	and RetirementTick								> 0 ) ) 	or \
+		( not ( isinstance( MaturityTick , 									int )	and MaturityTick								> 0 ) ) 	or \
+	   	( not ( MaturityTick <= RetirementTick <= MaxTick																				) ) 	: AgeGenderError = True
+	SequentialTickComparator = NominalPopulationSpec [ 0 ] [ 0 ] - 1
+	for SpecIndex in range( 0, len( NominalPopulationSpec ) ) :
+		if	( not ( isinstance( NominalPopulationSpec [ SpecIndex ] [ 0 ] , int )	 and NominalPopulationSpec [ SpecIndex ] [ 0 ] >= 0	) )		or \
+	   		( not ( isinstance( NominalPopulationSpec [ SpecIndex ] [ 1 ] , float )	 and NominalPopulationSpec [ SpecIndex ] [ 1 ] >= 0.0 ) )	or \
+	   		( not ( isinstance( NominalPopulationSpec [ SpecIndex ] [ 2 ] , float )	 and NominalPopulationSpec [ SpecIndex ] [ 2 ] >= 0.0 ) )	or \
+	   		( not ( NominalPopulationSpec [ SpecIndex ] [ 0 ] == SequentialTickComparator + 1 ) )												: AgeGenderError = True
+		SequentialTickComparator = NominalPopulationSpec [ SpecIndex ] [ 0 ]
+	if AgeGenderError : print "WARNING: Error in AgeGender spec. Simulation will halt."
+	
+def GetAndCheckBirthsDeathsData ( ) :
+#
+# Hand-crafted data is supplied for test purposes. Replace with file input, other function outputs, or real-time user input when code is stabilized.
+# Notes:
+#	GestationTicks is the number of Ticks a normal pregnancy lasts.
+#	PregnancyDelayTicks is the number of Ticks that an Agent must wait after giving birth to become pregnant.
+#	MaxPregnantTick is the maximum age that an Agent can become pregnant.
+#	BirthRate is derived from
+#	http://www.statcan.gc.ca/tables-tableaux/sum-som/l01/cst01/demo02a-eng.htm (population) and # http://www.statcan.gc.ca/tables-tableaux/sum-som/l01/cst01/demo04a-eng.htm (births)
+#		Statistics Canada Births: 2009/10 379,373; 2010/11 376,951; 2011/12 378,752; 2012/13 383,822
+#		Statistics Canada Population: 2009 33,628,600; 2010 34,005,300; 2011 34,342,800; 2012 34,754,300
+#	DeathSpec is taken from http://www.statcan.gc.ca/tables-tableaux/sum-som/l01/cst01/health30a-eng.htm (average of rates 2007-2011).
+#	DeathRateBasis is the denomintor against which actual deaths are calculated to arrive at a percentage.
+#
+# Speciy and check all birth-related data. When integrated, this data should be acquired from a file or the user in real time.
+#
+	global	GestationTicks , PregnancyDelayTicks , MaxPregnantTick , BirthRate , DeathRate , \
+			BirthsDeathsError , \
+			PrintFlow
+#
+	if PrintFlow: print "      BirthsDeathData"
+# Get/set data.
+	GestationTicks 		= 9
+	PregnancyDelayTicks = 18
+	MaxPregnantTick		= 65
+	BirthRate 			= round( ( float( 379373 ) / float( 33628600 ) + float( 376951 ) / float( 34005300 ) + float( 378752 ) / float( 34342800 ) + \
+							float( 383822 ) / float( 34754300 ) ) / 4.0 , 4 )
+	DeathRate			= round( ( float( 44 ) + float( 47 ) + float( 47 ) + float( 46 ) + float( 48 ) ) / 50000 , 4 ) # StatsCan average for past 5 years.
+#
+# Verify/validate data.
+#
+	if	( not ( isinstance( GestationTicks , 		int ) 	and GestationTicks 		> 0 ) ) or \
+		( not ( isinstance( PregnancyDelayTicks , 	int ) 	and PregnancyDelayTicks > 0 ) ) or \
+		( not ( isinstance( MaxPregnantTick , 		int ) 	and MaxPregnantTick 	> 0 ) ) or \
+		( not ( isinstance( BirthRate ,				float ) and BirthRate 			> 0 ) ) or \
+		( not ( isinstance( DeathRate ,				float ) and DeathRate	 		> 0 ) ) : BirthsDeathsError = True
+	if BirthsDeathsError : print "WARNING: Error in BirthsDeaths spec. Simulation will halt."
+	
+def GetAndCheckBeliefsDesiresIntentionsPowersData ( ) :
+#
+# Hand-crafted data is supplied for test purposes. Replace with file input, other function outputs, or real-time user input when code is stabilized.
+#
+# Notes:
+#	At present, Desires and Intentions are coupled to ConsumptionBeliefs, and ConsumptionBeliefs and Powers are the dimensions of WorldView options.
+#	SupplyBeliefsSpec defines the levels of belief that an Agent has about the supply of energy; currently this is a descriptive, not operational variable.
+#	ConsumptionBeliefsSpec defines the level of belief that an Agent has about their deservedness to consume energy; this is a primary operational variable.
+#	DesiresSpec defines the goals associated with the above Consumption Belief options.
+#	IntentionsSpec defines the Claims that Agents will make; currently these are hard-coded (the intent is to enable algorithmic specification).
+#	PowersSpec defines the level of access to Energy Allocations. Agents' claims are met in order of their Power (same-Power Agents are randomized).
+#
+	global	SupplyBeliefsSpec , ConsumptionBeliefsSpec , DesiresSpec , IntentionsSpec , FullClaimFactors , RetirementClaimFactors , PowersSpec , \
+			TotalNominalPopulation , TotalNominalConsumption , \
+			BDIPError , \
+			PrintFlow
+#
+	if PrintFlow: print "      BDIPData"
+# Get/set data.
+	SupplyBeliefsSpec = list ( )
+	SupplyBeliefsSpec = [ \
+		( "Ignore" ,						True			) ,	\
+		( "No limits known" , 				1				) ,	\
+		( "Unlimited in long term" , 		2				) ,	\
+		( "Limited in short term" , 		3				) ,	\
+		( "Maxed Out" , 					2				) ,	\
+		( "Limited now" , 					1				)	]
+	ConsumptionBeliefsSpec = list ( )
+	ConsumptionBeliefsSpec = [ \
+		( "Ignore" ,						False			) ,	\
+		( "Luxurious" , 					1 ,		5000	) ,	\
+		( "Comfortable" , 					1 ,		500		) ,	\
+		( "Basic" , 						3 ,		50		) ,	\
+		( "Subsistence, all needs" ,  		2 , 	5		) ,	\
+		( "Subsistence, physical needs" , 	1 , 	1		) 	]
+	PowersSpec = list ( )
+	PowersSpec = [ \
+		( "Ignore" ,						False			) ,	\
+		( "Infinite" , 						1				) , \
+		( "High" , 							2				) ,	\
+		( "Medium" , 						3				) , \
+		( "Low" , 							2				) ,	\
+		( "Zero" , 							1				) 	]
+#
+	DesiresSpec = list ( )
+	DesiresSpec = [ \
+		( "Rapid securing of an exceptional lifestyle until death" ) , 		\
+		( "Realistic lifestyle with secure retirement at current level" ) , \
+		( "Avoid falling to subsistence level; minimal retirement" ) , 		\
+		( "Minimal lifestyle capable of supporting self-actualization" ) , 	\
+		( "Minimal healthy physical survival" )								]
+#
+	FullClaimFactors = list( )
+	FullClaimFactors = [ \
+		( 1.0 , 1.0 , 1.0 , 1.5 , 1.2 ) , 	\
+		( 0.5 , 0.2 , 0.1 , 0.0 , 0.0 ) , 	\
+		( 0.1 , 0.1 , 0.1 , 0.0 , 0.0 ) 	]
+	RetirementClaimFactors = list( )
+	RetirementClaimFactors = [ \
+		( 1.0 , 1.0 , 1.0 , 1.2 , 1.1 ) , 	\
+		( 0.2 , 0.2 , 0.0 , 0.0 , 0.0 ) , 	\
+		( 0.1 , 0.0 , 0.0 , 0.0 , 0.0 ) 	]
+	IntentionsSpec = list( )
+	IntentionsSpec = [ FullClaimFactors , RetirementClaimFactors ]
+#
+	TotalNominalPopulation				=	0
+	TotalNominalConsumption				=	0
+	for BeliefIndex in range ( 1 , len( ConsumptionBeliefsSpec ) ) :
+		TotalNominalPopulation			=	TotalNominalPopulation + ConsumptionBeliefsSpec [ BeliefIndex ] [ 1 ]
+		TotalNominalConsumption			=	TotalNominalConsumption + ConsumptionBeliefsSpec [ BeliefIndex ] [ 1 ] * ConsumptionBeliefsSpec [ BeliefIndex ] [ 2 ]
+#
+# Verify/validata data.
+#
+	if 	( not ( isinstance( SupplyBeliefsSpec [ 0 ] [ 1 ] , 						bool ) 															) )		or \
+		( not ( isinstance( ConsumptionBeliefsSpec [ 0 ] [ 1 ] ,					bool ) 															) )		or \
+		( not ( isinstance( PowersSpec [ 0 ] [ 1 ] , 								bool ) 															) )		: BDIPError = True
+	for Index in range ( 1 , len ( SupplyBeliefsSpec ) ) :
+		if	( not ( isinstance( SupplyBeliefsSpec [ Index ] [ 1 ] ,					int ) 	and		SupplyBeliefsSpec [ Index ] [ 1 ]			>= 0 ) )	or \
+	   		( not ( isinstance( ConsumptionBeliefsSpec [ Index ] [ 1 ] ,			int ) 	and		ConsumptionBeliefsSpec [ Index ] [ 1 ]		>= 0 ) ) 	or \
+	   		( not ( isinstance( ConsumptionBeliefsSpec [ Index ] [ 2 ] ,			int ) 	and		ConsumptionBeliefsSpec [ Index ] [ 2 ]		>= 0 ) )	or \
+	   		( not ( isinstance( PowersSpec [ Index ] [ 1 ] ,						int ) 	and		PowersSpec [ Index ] [ 1 ]					>= 0 ) )	: BDIPError = True
+	for Index1 in range ( 0 , len( FullClaimFactors ) ) :
+		for Index2 in range ( 0 , 5 ) :
+			 if ( not ( isinstance( FullClaimFactors [ Index1 ] [ Index2 ] , 		float ) and 	FullClaimFactors [ Index1 ] [ Index2 ] 		>= 0 ) )	or \
+			 	( not ( isinstance( RetirementClaimFactors [ Index1 ] [ Index2 ] , 	float ) and 	RetirementClaimFactors [ Index1 ] [ Index2 ]>= 0 ) )	: BDIPError = True
+
+	if BDIPError : print "WARNING: Error in BeliefsDesiresIntentionsPowers data values. Simuluation will halt."
+	
+def GetAndCheckBiasesData ( ) :
+#
+# Hand-crafted data is supplied for test purposes. Replace with file input, other function outputs, or real-time user input when code is stabilized.
+# Notes:
+#	All Biases data must be float values between 0.0 and 1.0 inclusive. The Low and High values form the range for randomization of the actual effect applied.
+#	RiskAcceptanceEffect incorporates a number of Cognitive Biases that collectively represent the tendency to be risk tolerant when one can gain something of value.
+#	RiskAvoidanceEffect incorporates a number of Cognitive Biases that collectively represent the tendency to be risk averse when one can lose something of value.
+#	BelongingnessEffect incorporates a number of Cognitive Biases that collectively represent the tendency to make oneself more like a defined group than otherwise.
+#	HaloEffect incorporates a number of Cognitive Biases that collectively represent the tendency to ascribe more authority to certain individuals than others.
+#	DenialEffect iincorporates a number of Cognitive Biases that collectively represent the tendency to discount the messages one receives.
+#
+	global	RiskAcceptanceEffectLow , RiskAcceptanceEffectHigh , RiskAvoidanceEffectLow , RiskAvoidanceEffectHigh , BelongingnessEffectLow , BelongingnessEffectHigh , \
+			HaloEffectLow , HaloEffectHigh , MemoryEffectLow , MemoryEffectHigh , DenialEffectLow , DenialEffectHigh , \
+			BiasesError , \
+			PrintFlow
+#
+	if PrintFlow: print "      BiasesData"
+# Get/set data.
+	RiskAcceptanceEffectLow = 	0.1
+	RiskAcceptanceEffectHigh = 	0.5
+	RiskAvoidanceEffectLow = 		0.1
+	RiskAvoidanceEffectHigh =  		0.3
+	BelongingnessEffectLow = 	0.2
+	BelongingnessEffectHigh = 	0.4
+	HaloEffectLow = 				0.1
+	HaloEffectHigh =  				0.5
+	MemoryEffectLow = 			0.3
+	MemoryEffectHigh = 			0.6
+	DenialEffectLow = 				0.1
+	DenialEffectHigh = 				0.3
+#
+# Verify/validata data.
+#
+	if	( not ( isinstance( RiskAcceptanceEffectLow ,	float ) and 1.0 >= RiskAcceptanceEffectHigh 	>= 0 ) ) or \
+	   	( not ( isinstance( RiskAvoidanceEffectLow , 	float ) and 1.0 >= RiskAvoidanceEffectHigh 		>= 0 ) ) or \
+		( not ( isinstance( BelongingnessEffectLow , 	float ) and 1.0 >= BelongingnessEffectHigh		>= 0 ) ) or \
+		( not ( isinstance( HaloEffectLow , 			float ) and 1.0 >= HaloEffectHigh 				>= 0 ) ) or \
+		( not ( isinstance( MemoryEffectLow , 			float ) and 1.0 >= MemoryEffectHigh 			>= 0 ) ) or \
+		( not ( isinstance( DenialEffectLow , 			float ) and 1.0 >= DenialEffectHigh 			>= 0 ) ) : BiasesError = True
+	if BiasesError : print "WARNING: Error in Biases data values. Simulation will halt."
+	
+def GetAndCheckAffinitiesData ( ) :
+#
+# Hand-crafted data is supplied for test purposes. Replace with file input, other function outputs, or real-time user input when code is stabilized.
+# Notes:
+#	ThoughtLeaderFraction is the % of all Affinity Groups that are thought leaders, whose input to inter-agent discussions is weighted more highly than others.
+#	AffinitiesSpec is a list of tuples of the form (AffinityGroupDescription,ConsumptionBeliefIndex); normally, only one ConsumptionBelief would attach to a given AffinityGroup.
+#
+	global	ThoughtLeaderFraction , AffinitiesSpec , \
+			AffinitiesError , \
+			PrintFlow
+#
+	if PrintFlow: print "      AffinitiesData"
+# Get/set data.
+	ThoughtLeaderFraction 		= 0.1
+	AffinitiesSpec 				= list( )
+	AffinitiesSpec 				= [ ( "Basic is equitable" , 2 ) , ( "Out for number 1" , 0 ) , ( "Just getting by" , 3 ) , ( "In trouble" , 4 ) , ( "Life is good" , 1 ) ]
+# Verify/validate data.
+	if	( not ( isinstance( ThoughtLeaderFraction , float ) and 0.0 <= ThoughtLeaderFraction <= 1.0 ) ) : AffinitiesError = True
+	if AffinitiesError : print "WARNING: Error in Affinites spec. Simulation will halt."
+	
+def GetAndCheckNeedsData ( ) :
+#
+# Hand-crafted data is supplied for test purposes. Replace with file input, other function outputs, or real-time user input when code is stabilized.
+# Notes:
+#	Needs data reflect Maslow's Hierarchy of Needs; values are in energy units.
+#
+	global	PhysiologicalNeedsLow , PhysiologicalNeedsHigh , SafetyNeedsLow , SafetyNeedsHigh , AttachmentNeedsLow , AttachmentNeedsHigh , FullClaimsFactors , \
+			EsteemNeedsLow , EsteemNeedsHigh , ActualizationNeedsLow , ActualizationNeedsHigh , InitialWealthFactor , NeedsNotMetToleranceLow , NeedsNotMetToleranceHigh , \
+			NeedsError , \
+			PrintFlow
+#
+	if PrintFlow: print "      NeedsData"
+# Get/set data.
+	PhysiologicalNeedsLow	= 75
+	PhysiologicalNeedsHigh	= 100
+	SafetyNeedsLow				= 50
+	SafetyNeedsHigh				= 75
+	AttachmentNeedsLow		= 15
+	AttachmentNeedsHigh		= 20
+	EsteemNeedsLow				= 10
+	EsteemNeedsHigh				= 15
+	ActualizationNeedsLow	= 1
+	ActualizationNeedsHigh	= 5
+	NeedsNotMetToleranceLow		= 1
+	NeedsNotMetToleranceHigh	= 3
+#
+	InitialWealthFactor		= 1.0
+#
+# Verify/validate data. 
+#
+	if	( not ( isinstance( PhysiologicalNeedsLow ,		int ) and PhysiologicalNeedsLow			>= 0 ) ) or \
+		( not ( isinstance( PhysiologicalNeedsHigh ,	int ) and PhysiologicalNeedsHigh		>= 0 ) ) or \
+		( not ( isinstance( SafetyNeedsLow ,			int ) and SafetyNeedsLow				>= 0 ) ) or \
+		( not ( isinstance( SafetyNeedsHigh ,			int ) and SafetyNeedsHigh				>= 0 ) ) or \
+		( not ( isinstance( AttachmentNeedsLow ,		int ) and AttachmentNeedsLow			>= 0 ) ) or \
+		( not ( isinstance( AttachmentNeedsHigh ,		int ) and AttachmentNeedsHigh			>= 0 ) ) or \
+		( not ( isinstance( EsteemNeedsLow ,			int ) and EsteemNeedsLow				>= 0 ) ) or \
+		( not ( isinstance( EsteemNeedsHigh ,			int ) and EsteemNeedsHigh				>= 0 ) ) or \
+		( not ( isinstance( ActualizationNeedsLow ,		int ) and ActualizationNeedsLow 		>= 0 ) ) or \
+		( not ( isinstance( ActualizationNeedsHigh ,	int ) and ActualizationNeedsHigh 		>= 0 ) ) or \
+		( not ( isinstance( NeedsNotMetToleranceLow , 	int ) and NeedsNotMetToleranceLow		>= 0 ) ) or \
+		( not ( isinstance( NeedsNotMetToleranceHigh , 	int ) and NeedsNotMetToleranceHigh		>= 0 ) ) or \
+		( not ( isinstance( InitialWealthFactor , 		float ) and InitialWealthFactor			>= 0.0 ) ) : NeedsError = True
+	if NeedsError : print "WARNING: Error in Needs spec. Simulation will halt."
+
+def GenerateAgents ( ) :
+#
+# This function generates the initial set of Agents for the current simulation.
+#
+# Hand-crafted data is supplied for test purposes. Replace with file input, other function outputs, or real-time user input when code is stabilized.
+# Notes: (ALgorithm under review)
+#	The size of the generated population is calculated as the smallest multiple of len(WorldViewCombinations) greater than or equal to ApproximateStartingPopulation,
+#	rounded up to the next multiple of len(NominalPopulation in orderto support allocation to ages and genders reflective of NominalPopulation.
+#
+	import math
+	import random
+#
+	global	AgentData , PowersSpec , PowerBlockData , \
+			NominalPopulationSpec , StartingPopulationSize , NumberOfMalesByTick , NumberOfFemalesByTick , WorldViewCombinations , AffinitiesSpec , \
+			RiskAcceptanceEffectLow , RiskAcceptanceEffectHigh , RiskAvoidanceEffectLow , RiskAvoidanceEffectHigh , BelongingnessEffectLow , BelongingnessEffectHigh , \
+			HaloEffectLow , HaloEffectHigh , MemoryEffectLow , MemoryEffectHigh , DenialEffectLow , DenialEffectHigh , \
+			MaturityTick , GestationTicks , PregnancyDelayTicks , LatestPregnancyTick, MaxPregnantTick , BirthRate , DeathRate , \
+			PhysiologicalNeedsLow , PhysiologicalNeedsHigh , SafetyNeedsLow , SafetyNeedsHigh , AttachmentNeedsLow , AttachmentNeedsHigh , EsteemNeedsLow , EsteemNeedsHigh , \
+			ActualizationNeedsLow , ActualizationNeedsHigh , NeedsNotMetToleranceLow , NeedsNotMetToleranceHigh , \
+			ConsumptionBeliefsSpec , PersonalData , WorldViewData , AffinityData , BiasesData , NeedsData , ClaimsData , AllocationsData , PowerBlockData , \
+			PrintFlow
+#
+	if PrintFlow: print "   GenerateAgents"
+# Determine StartingPopulationSize.
+	GenerateWorldViewCombinations ( )
+	ScalePopulation ( )	
+# Prepare to generate agents.
+	AgentData 			= list( )
+	PowerBlockData 		= list( )
+	for Index in range ( 0 , len( PowersSpec ) ) :
+		PowerBlockData	. append( ( 0 , 0 ) ) # Iniital Beginning and Ending Indices of Power blocks.
+# Create empty lists for data that will be used during the simulation.
+	ClaimsData 			= list( )
+	AllocationsData 	= list( )
+#
+# Create male Agents with WorldView combinations just generated; cycle through these combinations repeatedly, starting at the beginning.
+#
+	Gender = "Male"
+	PregnancyStatus = "Never"
+	WorldViewIndex = 0
+	for AgeIndex in range ( 0 , MaxTick + 1 ) :
+		for Agent in range ( 0 , NumberOfMalesByTick [ AgeIndex ] ) :
+			PersonalData 							= ( AgeIndex , Gender, PregnancyStatus )
+# Cycle through WorldViewCombinations.
+			if WorldViewIndex 						>= len( WorldViewCombinations ) : WorldViewIndex = 0
+			WorldViewData 							= ( WorldViewCombinations [ WorldViewIndex ] [ 1 ] , WorldViewCombinations [ WorldViewIndex ] [ 2 ] )
+# Add AffinityData.
+			AffinityData 							= list( )
+			for Affinity in range ( 0, len ( AffinitiesSpec ) ) :
+				if AffinitiesSpec [ Affinity ] [ 1 ] == WorldViewCombinations [ WorldViewIndex ] [ 0 ] : # Compare Affinity to SupplyBelief.
+					AffinityData 					. append( Affinity )
+# Add randomized BiasesData.
+			RiskAcceptanceEffect			 		= round( RiskAcceptanceEffectLow + random.random ( ) 	* ( RiskAcceptanceEffectHigh - RiskAcceptanceEffectLow ) 	, 2 )
+			RiskAvoidanceEffect 					= round( RiskAvoidanceEffectLow + random.random ( ) 	* ( RiskAvoidanceEffectHigh - RiskAvoidanceEffectLow  ) 	, 2 )
+			BelongingnessEffect 					= round( BelongingnessEffectLow + random.random ( ) 	* ( BelongingnessEffectHigh - BelongingnessEffectLow ) 		, 2 )
+			ThoughtLeaderEffect 					= round( HaloEffectLow + random.random ( ) 				* ( HaloEffectHigh - HaloEffectLow ) 						, 2 )
+			MemoryEffect 							= round( MemoryEffectLow + random.random ( ) 			* ( MemoryEffectHigh - MemoryEffectLow ) 					, 2 )
+			DenialEffect 							= round( DenialEffectLow + random.random ( )			* ( DenialEffectHigh - DenialEffectLow ) 					, 2 )
+			BiasesData 								= ( RiskAcceptanceEffect , RiskAvoidanceEffect , BelongingnessEffect , ThoughtLeaderEffect , MemoryEffect , DenialEffect )
+# Add randomized NeedsData.
+			PhysiologicalNeed 						= round( PhysiologicalNeedsLow  + random.random ( ) 	* ( PhysiologicalNeedsHigh - PhysiologicalNeedsLow ) 		, 2 )
+			SafetyNeed 								= round( SafetyNeedsLow + random.random ( ) 			* ( SafetyNeedsLow - SafetyNeedsHigh ) 						, 2 )
+			AttachmentNeed 							= round( AttachmentNeedsLow + random.random ( ) 		* ( AttachmentNeedsHigh - AttachmentNeedsLow ) 				, 2 )
+			EsteemNeed 								= round( EsteemNeedsLow + random.random ( ) 			* ( EsteemNeedsHigh - EsteemNeedsLow ) 						, 2 )
+			ActualizationNeed 						= round( ActualizationNeedsLow + random.random ( ) 		* ( ActualizationNeedsHigh - ActualizationNeedsLow ) 		, 2 )
+			NeedsNotMetTolerance 					= random.randint ( NeedsNotMetToleranceLow , NeedsNotMetToleranceHigh )
+			NeedsData 								= ( PhysiologicalNeed , SafetyNeed , AttachmentNeed , EsteemNeed , ActualizationNeed , NeedsNotMetTolerance )
+# Create new male Agent.
+			CreateNewAgent ( )
+			WorldViewIndex 							= WorldViewIndex + 1
+#
+# Create female Agents. Similar to males, with added processing re births and pregnancy.
+#
+	Gender = "Female"
+#
+# Make some females pregnant to different degrees, and make some others recently-delivered to different degrees.
+# Method:
+#	Calculate number of females to make pregnant as BirthRate * StartingPopulation with PregnancyStatus between 1 and GestationTicks (all to give birth next Cycle).
+#	Calculate number of females that gave birth prior to the simulation as StartingPopulation * (BirthRate - DeathRate) * (PregnancyDelayTicks / GestationTicks), \
+#		with PregnancyStatus between -1 and -PregnancyDelayTicks.
+#	Evenly spread these over new female Agents aged MaturityTick through LatestPregnancyTick, without overlap.
+#
+	NumberOfFemalesToMakePregnant 					= BirthRate * StartingPopulationSize
+	NumberOfFemalesToAvoidPregnancy 				= ( BirthRate - DeathRate ) * StartingPopulationSize * ( PregnancyDelayTicks / GestationTicks )
+	NumberOfPregnancyEligibleFemales 				= 0
+	for TickIndex in range ( MaturityTick , MaxPregnantTick + 1 ) :
+		NumberOfPregnancyEligibleFemales 			= NumberOfPregnancyEligibleFemales + NumberOfFemalesByTick [ TickIndex ]
+	while NumberOfFemalesToMakePregnant + NumberOfFemalesToAvoidPregnancy > NumberOfPregnancyEligibleFemales :
+		NumberOfFemalesToMakePregnant 				= NumberOfFemalesToMakePregnant - 1
+		NumberOfFemalesToAvoidPregnancy 			= NumberOfFemalesToAvoidPregnancy - 1
+	NumberOfFemalesToMakePregnantEachTick 			= int ( NumberOfFemalesToMakePregnant / ( MaxPregnantTick - MaturityTick + 1 ) )
+	NumberOfFemalesToAvoidPregnancyEachTick			= int ( NumberOfFemalesToAvoidPregnancy / ( MaxPregnantTick - MaturityTick + 1 ) )
+	for AgeIndex in range ( 0 , MaxTick + 1 ) :		
+		NumberOfFemalesPregnancyStatusAlteredThisTick 				= 0
+		for Agent in range ( 0 , NumberOfFemalesByTick [ AgeIndex ] ) : # Create data for all females at this age.
+			PregnancyStatus 										= 0 # Default.
+			if MaturityTick <= TickIndex <= MaxPregnantTick : # Set pregnancy status; first block for making pregnant, second block for avoiding pregnancy.
+				if NumberOfFemalesPregnancyStatusAlteredThisTick 	< NumberOfFemalesToMakePregnantEachTick :
+					PregnancyStatus 								= random.randint ( 1 , GestationTicks )
+					NumberOfFemalesPregnancyStatusAlteredThisTick 	= NumberOfFemalesPregnancyStatusAlteredThisTick + 1
+				elif NumberOfFemalesPregnancyStatusAlteredThisTick 	< NumberOfFemalesToMakePregnantEachTick + NumberOfFemalesToAvoidPregnancyEachTick :
+					PregnancyStatus 								= random.randint ( - PregnancyDelayTicks , - 1 )
+					NumberOfFemalesPregnancyStatusAlteredThisTick 	= NumberOfFemalesPregnancyStatusAlteredThisTick + 1				
+			PersonalData = ( AgeIndex , Gender, PregnancyStatus )
+# Cycle through WorldViewCombinations.
+			if WorldViewIndex 						>= len( WorldViewCombinations ) : WorldViewIndex = 0
+			WorldViewData 							= ( WorldViewCombinations [ WorldViewIndex ] [ 1 ] , WorldViewCombinations [ WorldViewIndex ] [ 2 ] )
+# Add AffinityData, i.e. the WorldView that matches that assigned above.
+			AffinityData 							= list( )
+			for Affinity in range ( 0, len ( AffinitiesSpec ) ) :
+				if 	AffinitiesSpec [ Affinity ] [ 1 ] == WorldViewData [ 0 ] : # Compare Affinity to SupplyBelief.
+					AffinityData . append( Affinity )
+# Add randomized BiasesData.
+			RiskAcceptanceEffect 					= round( RiskAcceptanceEffectLow + random.random ( )	* ( RiskAcceptanceEffectHigh - RiskAcceptanceEffectLow ) 	, 2 )
+			RiskAvoidanceEffect 					= round( RiskAvoidanceEffectLow + random.random ( )	 	* ( RiskAvoidanceEffectHigh - RiskAvoidanceEffectLow  ) 	, 2 )
+			BelongingnessEffect 					= round( BelongingnessEffectLow + random.random ( ) 	* ( BelongingnessEffectHigh - BelongingnessEffectLow ) 		, 2 )
+			ThoughtLeaderEffect 					= round( HaloEffectLow + random.random ( ) 				* ( HaloEffectHigh - HaloEffectLow ) 						, 2 )
+			MemoryEffect 							= round( MemoryEffectLow + random.random ( ) 			* ( MemoryEffectHigh - MemoryEffectLow ) 					, 2 )
+			DenialEffect 							= round( DenialEffectLow + random.random ( ) 			* ( DenialEffectHigh - DenialEffectLow ) 					, 2 )
+			BiasesData = ( RiskAcceptanceEffect , RiskAvoidanceEffect , BelongingnessEffect , ThoughtLeaderEffect , MemoryEffect , DenialEffect )
+# Add randomized NeedsData.
+			PhysiologicalNeed 						= round( PhysiologicalNeedsLow  + random.random ( ) 	* ( PhysiologicalNeedsHigh - PhysiologicalNeedsLow ) 		, 2 )
+			SafetyNeed 								= round( SafetyNeedsLow + random.random ( ) 			* ( SafetyNeedsLow - SafetyNeedsHigh ) 						, 2 )
+			AttachmentNeed 							= round( AttachmentNeedsLow + random.random ( ) 		* ( AttachmentNeedsHigh - AttachmentNeedsLow ) 				, 2 )
+			EsteemNeed 								= round( EsteemNeedsLow + random.random ( ) 			* ( EsteemNeedsHigh - EsteemNeedsLow ) 						, 2 )
+			ActualizationNeed 						= round( ActualizationNeedsLow + random.random ( ) 		* ( ActualizationNeedsHigh - ActualizationNeedsLow ) 		, 2 )
+			NeedsNotMetTolersance 					= random.randint ( NeedsNotMetToleranceLow , NeedsNotMetToleranceHigh )
+			NeedsData 								= ( PhysiologicalNeed , SafetyNeed , AttachmentNeed , EsteemNeed , ActualizationNeed , NeedsNotMetTolerance )
+# Create new female Agent.
+			CreateNewAgent ( )
+			WorldViewIndex			 				= WorldViewIndex + 1
+
+def CreateNewAgent ( ) :
+#
+# This function avoids sorting AgentData by Power (an N^2 process) by inserting a new Agent record at a randomly-chosen location in the appropriate Power block.
+#
+	import	random
+#
+	global	AgentData , PersonalData , WorldViewData , AffinityData , BiasesData , NeedsData , ClaimsData , AllocationsData , PowerBlockData , \
+			PrintFlow
+#
+	DataToInsert			= 	[ PersonalData , WorldViewData , AffinityData , BiasesData , NeedsData , ClaimsData , AllocationsData ] # Created in AgentData.
+	PowerIndex				= 	WorldViewData [ 1 ] # Obtain PowerSpec Index from WorldViewData.
+	BeginningBlockIndex		=	PowerBlockData [ PowerIndex ] [ 0 ] # Obtain current starting location in AgentData of target Power block.
+#
+	AgentData				.	insert( BeginningBlockIndex , DataToInsert ) # Insert a new Agent into AgentData at the beginnig of the relevant Power block.
+# Increment this and 'downstream' blocks' beginning and ending AgentData locations.
+	for PowerBlockIndex in range ( PowerIndex , len( PowersSpec ) ) : # Adjust all 'downstream' beginning and ending AgentData locations in PowerData.
+		BeginningIncrement	=	0 # Don't change beginning location for the Power block just inserted into.
+		if PowerBlockIndex	>	PowerIndex : BeginningIncrement = 1
+		PowerDataItem		=	list( ) # Re-used.
+		PowerDataItem		=	PowerBlockData . pop( PowerBlockIndex )
+		PowerBlockData		.	insert( PowerBlockIndex , ( ( PowerDataItem [ 0 ] + BeginningIncrement ) , ( PowerDataItem [ 1 ] + 1 ) ) )
+
+def GenerateWorldViewCombinations ( ) :
+#
+# This function constructs a base list of worldviews by generating all possible combinations of SupplyBeliefs, ConsumptionBeliefs and Powers, in their relative frequencies.
+#
+# Notes:
+#	SupplyBeliefsSpec, ConsumptionBeliefsSpec and PowersSpec are lists consisting of tuples of the form (text,frequency,[consumption]); only frequency is used here.
+#
+	import math
+#
+	global	SupplyBeliefsSpec , ConsumptionBeliefsSpec , PowersSpec , WorldViewCombinations , \
+			PrintFlow
+#
+	if PrintFlow : print "      WorldViewCombinations"
+# Generate minimum list accounting for all WorldView parameter combinations.
+	WorldViewCombinations = list( )
+#
+	EndSupplyBeliefRange = len( SupplyBeliefsSpec ) - 1 # Combinations will generated on a shorter list, since the first record will be removed.
+	if SupplyBeliefsSpec [ 0 ] [ 1 ] : # Ignore rest of SupplyBelefsSpec.
+		EndSupplyBeliefRange = 1
+	SupplyBeliefsSpec . pop ( 0 )
+#
+	EndConsumptionBeliefRange = len( ConsumptionBeliefsSpec ) - 1
+	if ConsumptionBeliefsSpec [ 0 ] [ 1 ] : # Ignore rest of ConsumptionBelefsSpec.
+		EndConsumptionBeliefRange = 1
+	ConsumptionBeliefsSpec . pop ( 0 )
+#
+	EndPowerRange = len( PowersSpec ) - 1
+	if PowersSpec [ 0 ] [ 1 ] : # Ignore rest of PowersSpec.
+		EndPowerRange = 1
+	PowersSpec . pop ( 0 )
+#
+	for SupplyBeliefIndex in range ( 0 , EndSupplyBeliefRange ) :	
+		for SupplyBeliefFrequency in range ( 0 , SupplyBeliefsSpec [ SupplyBeliefIndex ] [ 1 ] ) :
+			for ConsumptionBeliefIndex in range ( 0 , EndConsumptionBeliefRange ) :
+				for ConsumptionBeliefFrequency in range ( 0 , ConsumptionBeliefsSpec [ ConsumptionBeliefIndex ] [ 1 ] ) :
+					for PowerIndex in range ( 0 , EndPowerRange ) :
+						for PowerFrequency in range ( 0 , PowersSpec [ PowerIndex ] [ 1 ] ) :
+							WorldViewCombinations . append ( ( SupplyBeliefIndex , ConsumptionBeliefIndex , PowerIndex ) )
+
+def ScalePopulation ( ) :
+#
+# This function determines a StartingPopulationSize that maintain the relative numbers of WorldView combinations at that just determined, as well as the relative numbers
+# of age and gender combinations provided. This is done by finding the Lowest Common Multiple (LCM) of len(WorldViewCombinations) and len(NominalPopulation), then applying
+# the smallest multiple that exceeds ApproximateStartingPopulation.
+#
+# Male/Female splits are averaged from this source: http://www.statcan.gc.ca/pub/89-503-x/2010001/article/11475/tbl/tbl001-eng.htm
+#
+	global	ApproximateStartingPopulationSize , AbsoluteMaximumPopulationSize , \
+			StartingPopulationSize , NominalPopulationSpec , MalePopulationFraction , PopulationCountBasis , NumberOfMalesByTick , NumberOfFemalesByTick , \
+			WorldViewCombinations , TotalNominalConsumption , TotalNominalPopulation , \
+			PrintFlow
+#
+	import math
+	import random
+	if PrintFlow: print "      ScalePopulation"
+#
+# Calculate unit size of a population featuring one full set of WorldView combintations for one full set of AgeGender combinations.
+# This value is equal to the Least Common Multiple of the number of the numbers of each of these.
+#
+	AgeGenderCombinations 			= int( 2 * len( NominalPopulationSpec ) )
+	UnitPopulationSize 				= ( len( WorldViewCombinations ) * AgeGenderCombinations ) / GreatestCommonDivisor ( len( WorldViewCombinations ) , AgeGenderCombinations )
+	print "         TicksThisSimulation" , NumTicksEachSimulation
+	print "         AgeGenderCombinations" , AgeGenderCombinations
+	print "         WorldViewCombinations" , len( WorldViewCombinations )
+	print "         UnitPopulationSize" , UnitPopulationSize
+#
+# Calculate the number of these units required genrate a population that is not smaller than the ApproximateStartingPopulationSize.
+#
+	NumberOfPopulationUnits 		= int( math.ceil( float( ApproximateStartingPopulationSize ) / float( UnitPopulationSize ) ) )
+	ProvisionalPopulationSize		= UnitPopulationSize * NumberOfPopulationUnits
+	print "         ApproximatePopulationSize" , ApproximateStartingPopulationSize
+	print "         NumberOfUnits" , NumberOfPopulationUnits
+	print "         ProvisionalPopulationSize" , ProvisionalPopulationSize
+#
+# Since further scaling will be done using NominalPopulation values, ensure that the smallest of these results in a final population of at least 1 while preserving full sets
+# of WorldView and AgeGender combinationts, by findig the smallest multiple of StartingPopulation that ensures at least 1 in every AgeGender combination.
+#
+	SmallestNominalPopulationValue = 501.0 # All are 5 * % values, ie less than 501.
+	for TickIndex in range ( 0 , len( NominalPopulationSpec ) ) :
+		if NominalPopulationSpec [ TickIndex ] [ 1 ] < SmallestNominalPopulationValue : SmallestNominalPopulationValue = NominalPopulationSpec [ TickIndex ] [ 1 ]
+		if NominalPopulationSpec [ TickIndex ] [ 2 ] < SmallestNominalPopulationValue : SmallestNominalPopulationValue = NominalPopulationSpec [ TickIndex ] [ 2 ]
+	TheoreticalStartingPopulationSize 	= int( 2.0 * float( ProvisionalPopulationSize ) / float( SmallestNominalPopulationValue ) )
+	print "         SmallesNomPopSpec" , SmallestNominalPopulationValue
+	print "         TheoreticalStartingPopulationSize" , TheoreticalStartingPopulationSize 
+	NumberOfMalesByTick 					= list ( )
+	NumberOfFemalesByTick 					= list ( )
+	RunningTotalOfMales						= 0
+	RunningTotalOfFemales					= 0
+	MaxTotalOfMales							= int( round( MalePopulationFraction * float( TheoreticalStartingPopulationSize ) , 0 ) )
+	MaxTotalOfFemales						= int( round( ( 1.0 - float( MalePopulationFraction ) ) * float( TheoreticalStartingPopulationSize ) , 0 ) )
+	for TickIndex in range ( 0 , len( NominalPopulationSpec ) ) : # Adjust for %, replication of 5-year StatsCan data, and unequal gender split.
+		ProposedNumberOfMalesToAdd			= int( math.ceil(	float( TheoreticalStartingPopulationSize ) * \
+																float( NominalPopulationSpec [ TickIndex ] [ 1 ] ) * PopulationCountBasis * MalePopulationFraction ) )
+		NumberOfMalesThisTick				= min( ProposedNumberOfMalesToAdd , MaxTotalOfMales - RunningTotalOfMales )
+		NumberOfMalesByTick					. append ( NumberOfMalesThisTick )
+		RunningTotalOfMales					= RunningTotalOfMales + NumberOfMalesThisTick
+		ProposedNumberOfFemalesToAdd		= int( math.ceil(	float( TheoreticalStartingPopulationSize ) * float( NominalPopulationSpec [ TickIndex ] [ 1 ] ) * \
+																PopulationCountBasis * ( 1.0 - float( MalePopulationFraction ) ) ) )
+		NumberOfFemalesThisTick				= min( ProposedNumberOfFemalesToAdd , MaxTotalOfFemales - RunningTotalOfFemales )
+		NumberOfFemalesByTick  				. append ( NumberOfFemalesThisTick )
+		RunningTotalOfFemales				= RunningTotalOfFemales + NumberOfFemalesThisTick
+	BottomUpStartingPopulationSize			= RunningTotalOfMales + RunningTotalOfFemales
+	print "         BottomUpStartingPopulationSize" , BottomUpStartingPopulationSize
+#
+	AddToMales								= int( round( float( MalePopulationFraction ) * float( TheoreticalStartingPopulationSize - BottomUpStartingPopulationSize ) ) )
+	AddToFemales							= int( round( float( 1.0 - MalePopulationFraction ) * float( TheoreticalStartingPopulationSize - BottomUpStartingPopulationSize ) ) )
+	for TickIndex in range ( 0 , AddToMales ) :
+		PopInsertIndex						= random.randint( 0 , MaxTick )
+		NewNumber							= NumberOfMalesByTick [ PopInsertIndex ] + 1
+		NumberOfMalesByTick					. pop( PopInsertIndex )
+		NumberOfMalesByTick					. insert( PopInsertIndex , NewNumber )
+		RunningTotalOfMales					= RunningTotalOfMales + 1
+	for TickIndex in range ( 0 , AddToFemales ) :
+		PopInsertIndex						= random.randint( 0 , MaxTick )
+		NewNumber							= NumberOfFemalesByTick [ PopInsertIndex ] + 1
+		NumberOfFemalesByTick 				. pop( PopInsertIndex )
+		NumberOfFemalesByTick 				. insert( PopInsertIndex , NewNumber )
+		RunningTotalOfFemales				= RunningTotalOfFemales + 1
+	StartingPopulationSize					= RunningTotalOfMales + RunningTotalOfFemales
+#
+	StartingPopulationSize					= int( min( StartingPopulationSize , AbsoluteMaximumPopulationSize ) )
+	print "         FinalStartingPopulationSize" , StartingPopulationSize
+
+def GreatestCommonDivisor ( A , B ) : # In conjunction with ScalePopulation, finds the Lowest Common Multiple of two numbers using recursion.
+	if B == 0 : return ( A )
+	return ( GreatestCommonDivisor ( B , A % B ) )
+
+def RandomizeClaimsAndAllocationsOrder ( ) :
+#
+# This function sorts AgentData into Power blocks (highest power, lowest index first), then randomizes Agent order within each block.
+# Claims will be made and allocated in this order, so Agents with higher Power will be more likely to have their Claims satisfied, though shuffled each Tick
+#
+	import random
+#
+	global	AgentData , \
+			PrintFlow
+#
+	if PrintFlow : print "   StartRandomize"
+# Determine start and end of the each Power block.
+	EndAgentDataIndex 		= len( AgentData ) - 1
+	StartAgentIndex 		= 0
+	AgentIndex 				= 0
+	while AgentIndex <= EndAgentDataIndex :
+		Power 				= AgentData [ StartAgentIndex ] [ 1 ] [ 1 ]
+		if AgentIndex == EndAgentDataIndex or AgentData [ AgentIndex + 1 ] [ 1 ] [ 1 ] != Power : # New Power block or end of AgentData; logic order important.
+			EndAgentIndex 	= AgentIndex
+#
+# Shuffle each Power block using the Fisher-Yates Algorithm (see http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle):
+#	To shuffle an array a of n elements (indices 0 to n-1)
+#	do for i from n-1 to 1
+#		j = random integer with 0 <= j <= i
+#		exchange a[j] and a[i]
+#
+			for ShuffleIndex in range ( StartAgentIndex , EndAgentIndex ) :
+				InverseShuffleIndex 		= EndAgentIndex - ShuffleIndex - 1
+				RandomShuffleIndex 			= StartAgentIndex + random.randint ( 0 , InverseShuffleIndex )	
+				FirstAgentToMove 			= AgentData . pop( ShuffleIndex )
+				if RandomShuffleIndex > ShuffleIndex : RandomShuffleIndex = RandomShuffleIndex - 1 # Upper part of list is one shorter than prior to above pop.
+				SecondAgentToMove 			= AgentData . pop( RandomShuffleIndex )
+				AgentData 					. insert( RandomShuffleIndex , FirstAgentToMove )
+				AgentData 					. insert( ShuffleIndex , SecondAgentToMove )
+# Prepare for next Power block.
+			StartAgentIndex = EndAgentIndex + 1
+		AgentIndex 							= AgentIndex + 1
+
+def CalculateAgentsClaims ( ) :
+#
+# This function calculates current-Tick Agents' Claims independently, in the order determined by RandomizeClaimsAndAllocationsOrder (can change each SimTick).
+#
+	import random
+	import copy
+#
+	global	SimTick , AgentData , MemoryTicks , RetirementTick , ConsumptionBeliefsSpec , TotalNominalPopulation , TotalNominalConsumption , EnergySupplyFactors , \
+			FullClaimFactors , RetirementClaimFactors , FirstTickTotalEnergy , \
+			PrintFlow
+#
+	if PrintFlow :
+		print " "
+		print "   AgentsMakeClaims"
+	TotalEnergySupplyThisTick						=	0
+	TotalClaimsThisTick								= 	0
+	if SimTick == 0 :
+		FirstTickTotalEnergy						=	0
+#
+	for Agent in range ( 0 , len( AgentData ) ) :
+		AgentTick 									= 	AgentData [ Agent ] [ 0 ] [ 0 ]
+		RetirementTick								=	SimTick + 1 # Test only, to put all Agents through non-retiree streams.
+		ConsumptionBeliefIndexThisAgent				= 	AgentData [ Agent ] [ 1 ] [ 0 ]
+		PhysiologicalNeedsThisAgent					= 	AgentData [ Agent ] [ 4 ] [ 0 ]
+		SafetyNeedsThisAgent						= 	AgentData [ Agent ] [ 4 ] [ 1 ]
+		AttachmentNeedsThisAgent					= 	AgentData [ Agent ] [ 4 ] [ 2 ]
+		EsteemNeedsThisAgent						= 	AgentData [ Agent ] [ 4 ] [ 3 ]
+		ActualizationNeedsThisAgent					= 	AgentData [ Agent ] [ 4 ] [ 4 ]		
+		AllNeedsThisAgent							= 	PhysiologicalNeedsThisAgent + SafetyNeedsThisAgent + AttachmentNeedsThisAgent + \
+														EsteemNeedsThisAgent + ActualizationNeedsThisAgent
+#
+# First MemoryTicks EnergySupplyThisAgent based on ConsumptionBeliefsSpec.
+# After first MemoryTicks, EnergySupplyThisAgent is calculated as initial Allocation (=Claim) * EnergySupplyFactors [ tick ].
+#
+		if SimTick < MemoryTicks :
+			EnergySupplyThisAgent					=	float( EnergySupplyFactors [ SimTick ] ) * float( StartingPopulationSize ) / float( TotalNominalPopulation ) * \
+														float( ConsumptionBeliefsSpec [ ConsumptionBeliefIndexThisAgent ] [ 2 ] )
+		else :
+			EnergySupplyThisAgent					=	float( EnergySupplyFactors [ SimTick ] ) * float( AgentData [ Agent ] [ 6 ] [ 0 ] [ 3 ] )
+#
+#	History Creation, non-retirees.
+#
+		if SimTick < MemoryTicks and SimTick < RetirementTick : # In History Creation Phase for non-retirees.
+#
+			if ConsumptionBeliefIndexThisAgent		== 0 :
+				PersonalUsageClaimThisAgent 		=	float( EnergySupplyThisAgent ) / ( 1 + float( FullClaimFactors [ 1 ] [ 0 ] ) + float( FullClaimFactors [ 2 ] [ 0 ] ) )
+				PersonalStorageClaimThisAgent		= 	float( PersonalUsageClaimThisAgent ) * float( FullClaimFactors [ 1 ] [ 0 ] )
+				ContributionClaimThisAgent 			= 	float( PersonalUsageClaimThisAgent ) * float( FullClaimFactors [ 2 ] [ 0 ] )
+#
+			if ConsumptionBeliefIndexThisAgent		== 1 :
+				PersonalUsageClaimThisAgent 		=	float( EnergySupplyThisAgent ) / ( 1 + float( FullClaimFactors [ 1 ] [ 1 ] ) + float( FullClaimFactors [ 2 ] [ 1 ] ) )
+				PersonalStorageClaimThisAgent		= 	float( PersonalUsageClaimThisAgent ) * float( FullClaimFactors [ 1 ] [ 1 ] )
+				ContributionClaimThisAgent 			= 	float( PersonalUsageClaimThisAgent ) * float( FullClaimFactors [ 2 ] [ 1 ] )
+#
+			if ConsumptionBeliefIndexThisAgent		== 2 :
+				PersonalUsageClaimThisAgent 		=	float( EnergySupplyThisAgent ) / ( 1 + float( FullClaimFactors [ 1 ] [ 2 ] ) + float( FullClaimFactors [ 2 ] [ 2 ] ) )
+				PersonalStorageClaimThisAgent		= 	float( PersonalUsageClaimThisAgent ) * float( FullClaimFactors [ 1 ] [ 2 ] )
+				ContributionClaimThisAgent 			= 	float( PersonalUsageClaimThisAgent ) * float( FullClaimFactors [ 2 ] [ 2 ] )
+#
+			if ConsumptionBeliefIndexThisAgent		== 3 :
+				PersonalUsageClaimThisAgent 		=	float( EnergySupplyThisAgent ) / ( 1 + float( FullClaimFactors [ 1 ] [ 3 ] ) + float( FullClaimFactors [ 2 ] [ 3 ] ) )
+				PersonalStorageClaimThisAgent		= 	float( PersonalUsageClaimThisAgent ) * float( FullClaimFactors [ 1 ] [ 3 ] )
+				ContributionClaimThisAgent 			= 	float( PersonalUsageClaimThisAgent ) * float( FullClaimFactors [ 2 ] [ 3 ] )
+#
+			if ConsumptionBeliefIndexThisAgent		== 4 :
+				PersonalUsageClaimThisAgent 		=	float( EnergySupplyThisAgent ) / ( 1 + float( FullClaimFactors [ 1 ] [ 4 ] ) + float( FullClaimFactors [ 2 ] [ 4 ] ) )
+				PersonalStorageClaimThisAgent		= 	float( PersonalUsageClaimThisAgent ) * float( FullClaimFactors [ 1 ] [ 4 ] )
+				ContributionClaimThisAgent 			= 	float( PersonalUsageClaimThisAgent ) * float( FullClaimFactors [ 2 ] [ 4 ] )
+#
+# Normal Operation, before Retirement.
+#
+		if SimTick >= MemoryTicks and SimTick < RetirementTick :
+			if ConsumptionBeliefIndexThisAgent				== 0 :
+				MaxDataThisAgentOverMemoryTicks 			=	float( 0 )
+				for TickIndex in range ( SimTick - MemoryTicks , SimTick ) :
+					if float( AgentData [ Agent ] [ 5 ] [ TickIndex ] [ 0 ] ) > MaxDataThisAgentOverMemoryTicks : # Replace with Allocations when that code is integrated.
+						MaxDataThisAgentOverMemoryTicks 	=	float( AgentData [ Agent ] [ 5 ] [ TickIndex ] [ 0 ] )
+				PersonalUsageClaimThisAgent					= 	float( MaxDataThisAgentOverMemoryTicks )
+				PersonalStorageClaimThisAgent				=	float( PersonalUsageClaimThisAgent ) * float( FullClaimFactors [ 1 ] [ 0 ] )
+				ContributionClaimThisAgent 					= 	float( PersonalUsageClaimThisAgent ) * float( FullClaimFactors [ 2 ] [ 0 ] )
+#
+			if ConsumptionBeliefIndexThisAgent				== 1 :
+				TotalDataThisAgentOverMemoryTicks 			= 	float( 0 )
+				for TickIndex in range ( SimTick - MemoryTicks , SimTick ) : # Replace with Allocations when that code is integrated.
+					TotalDataThisAgentOverMemoryTicks 		=	float( TotalDataThisAgentOverMemoryTicks ) + float( AgentData [ Agent ] [ 5 ] [ TickIndex ] [ 0 ] )
+				AverageDataThisAgentOverMemoryTicks 		=	float( TotalDataThisAgentOverMemoryTicks ) / float( MemoryTicks )
+				PersonalUsageClaimThisAgent 				=	float( AverageDataThisAgentOverMemoryTicks )
+				PersonalStorageClaimThisAgent				=	float( PersonalUsageClaimThisAgent ) * float( FullClaimFactors [ 1 ] [ 1 ] )
+				ContributionClaimThisAgent 					= 	float( PersonalUsageClaimThisAgent ) * float( FullClaimFactors [ 2 ] [ 1 ] )
+#
+			if ConsumptionBeliefIndexThisAgent				== 2 :
+				PersonalUsageClaimThisAgent 				=	max( float( AgentData [ Agent ] [ 5 ] [ MemoryTicks - 1 ] [ 0 ] ) , float( AllNeedsThisAgent ) )
+				PersonalStorageClaimThisAgent				=	float( PersonalUsageClaimThisAgent ) * float( FullClaimFactors [ 1 ] [ 2 ] )
+				ContributionClaimThisAgent 					= 	float( PersonalUsageClaimThisAgent ) * float( FullClaimFactors [ 2 ] [ 2 ] )
+#
+			if ConsumptionBeliefIndexThisAgent				== 3 :
+				PersonalUsageClaimThisAgent 				=	float( AllNeedsThisAgent ) * float( FullClaimFactors [ 0 ] [ 3 ] )
+				PersonalStorageClaimThisAgent				=	float( PersonalUsageClaimThisAgent ) * float( FullClaimFactors [ 1 ] [ 3 ] )
+				ContributionClaimThisAgent 					= 	float( PersonalUsageClaimThisAgent ) * float( FullClaimFactors [ 2 ] [ 3 ] )
+#
+			if ConsumptionBeliefIndexThisAgent				== 4 :
+				PersonalUsageClaimThisAgent 				=	float( PhysiologicalNeedsThisAgent ) * float( FullClaimFactors [ 0 ] [ 4 ] )
+				PersonalStorageClaimThisAgent				=	float( PersonalUsageClaimThisAgent ) * float( FullClaimFactors [ 1 ] [ 4 ] )
+				ContributionClaimThisAgent 					= 	float( PersonalUsageClaimThisAgent ) * float( FullClaimFactors [ 2 ] [ 4 ] )
+#
+# History Creation Phsae, retireees.
+#
+#		if SimTick <= MemoryTicks and SimTick >= RetirementTick : # In history creation Phase for retirees.
+#			if ConsumptionBeliefIndex			== 0 :
+#				PersonalUsageClaimThisAgent 				=	float( EnergyBudgetThisAgent ) 				/	( float( RetirementClaimFactors [ 0 ] [ 0 ] ) + \
+#																float( RetirementClaimFactors [ 1 ] [ 0 ] ) + 	float( RetirementClaimFactors [ 2 ] [ 0 ] ) )
+#				PersonalStorageClaimThisAgent 				=	float( PersonalUsageClaimThisAgent ) 		* 	float( RetirementClaimFactors [ 1 ] [ 0 ] )
+#				ContributionClaimThisAgent 					=	float( PersonalUsageClaimThisAgent ) 		* 	float( RetirementClaimFactors [ 2 ] [ 0 ] )
+#			if ConsumptionBeliefIndex 			== 1 :
+#				PersonalUsageClaimThisAgent 				=	float( EnergyBudgetThisAgent ) 				/ 	( float( RetirementClaimFactors [ 0 ] [ 1 ] ) + \
+#																float( RetirementClaimFactors [ 1 ] [ 1 ] ) + 	float( RetirementClaimFactors [ 2 ] [ 1 ] ) )
+#				PersonalStorageClaimThisAgent 				=	float( PersonalUsageClaimThisAgent ) 		* 	float( RetirementClaimFactors [ 1 ] [ 1 ] )
+#				ContributionClaimThisAgent 					=	float( PersonalUsageClaimThisAgent ) 		* 	float( RetirementClaimFactors [ 2 ] [ 1 ] )
+#			if ConsumptionBeliefIndex			== 2 :
+#				PersonalUsageClaimThisAgent 				=	float( EnergyBudgetThisAgent ) 				/ 	( float( RetirementClaimFactors [ 0 ] [ 2 ] ) + \
+#																float( RetirementClaimFactors [ 1 ] [ 2 ] ) + 	float( RetirementClaimFactors [ 2 ] [ 2 ] ) )
+#				PersonalStorageClaimThisAgent 				=	float( PersonalUsageClaimThisAgent ) 		* 	float( RetirementClaimFactors [ 1 ] [ 2 ] )
+#				ContributionClaimThisAgent 					=	float( PersonalUsageClaimThisAgent ) 		* 	float( RetirementClaimFactors [ 2 ] [ 2 ] )
+#			if ConsumptionBeliefIndex			== 3 :
+#				PersonalUsageClaimThisAgent 				=	float( AllNeedsThisAgent ) 					* 	float( RetirementClaimFactors [ 0 ] [ 3 ] )
+#				PersonalStorageClaimThisAgent 				=	float( PersonalUsageClaimThisAgent ) 		* 	float( RetirementClaimFactors [ 1 ] [ 3 ] )
+#				ContributionClaimThisAgent 					=	float( PersonalUsageClaimThisAgent ) 		* 	float( RetirementClaimFactors [ 2 ] [ 3 ] )
+#			if ConsumptionBeliefIndex			== 4 :
+#				PersonalUsageClaimThisAgent 				=	float( PhysiologicalNeedsThisAgent ) 		* 	float( RetirementClaimFactors [ 0 ] [ 4 ] )
+#				PersonalStorageClaimThisAgent 				=	float( PersonalUsageClaimThisAgent ) 		* 	float( RetirementClaimFactors [ 1 ] [ 4 ] )
+#				ContributionClaimThisAgent 					=	float( PersonalUsageClaimThisAgent ) 		* 	float( RetirementClaimFactors [ 2 ] [ 4 ] )
+#
+# Normal operation, retirees.
+#
+#		if SimTick > MemoryTicks and SimTick >= RetirementTick :
+#			MaxClaimThisAgentOverMemoryTicks 				=	float( 0 ) # Max is used in first 3 algorithm elements.
+#			for MTick in range ( 0 , MemoryTicks ) :
+#				if float( AgentData [ Agent ] [ 5 ] [ SimTick - MTick ] ) > MaxClaimThisAgentOverMemoryTicks :
+#					MaxClaimThisAgentOverMemoryTicks 		=	float( AgentData [ Agent ] [ 5 ] [ SimTick - MTick ] )
+#			if ConsumptionBeliefIndex			== 0 :
+#				PersonalUsageClaimThisAgent 				=	float( MaxClaimThisAgentOverMemoryTicks ) 	* 	float( RetirementClaimFactors [ 0 ] [ 0 ] )
+#				PersonalStorageClaimThisAgent 				=	float( PersonalUsageClaimThisAgent ) 		* 	float( RetirementClaimFactors [ 1 ] [ 0 ] )
+#				ContributionClaimThisAgent 					=	float( PersonalUsageClaimThisAgent ) 		* 	float( RetirementClaimFactors [ 2 ] [ 0 ] )
+#			if ConsumptionBeliefIndex 			== 1 :
+#				PersonalUsageClaimThisAgent 				=	float( MaxClaimThisAgentOverMemoryTicks ) 	* 	float( RetirementClaimFactors [ 0 ] [ 1 ] )
+#				PersonalStorageClaimThisAgent 				=	float( PersonalUsageClaimThisAgent ) 		* 	float( RetirementClaimFactors [ 1 ] [ 1 ] )
+#				ContributionClaimThisAgent 					=	float( PersonalUsageClaimThisAgent ) 		* 	float( RetirementClaimFactors [ 2 ] [ 1 ] )
+#			if ConsumptionBeliefIndex			== 2 :
+#				PersonalUsageClaimThisAgent 				=	float( MaxClaimThisAgentOverMemoryTicks ) 	* 	float( RetirementClaimFactors [ 0 ] [ 2 ] )
+#				PersonalStorageClaimThisAgent 				=	float( PersonalUsageClaimThisAgent ) 		* 	float( RetirementClaimFactors [ 1 ] [ 2 ] )
+#				ContributionClaimThisAgent 					=	float( PersonalUsageClaimThisAgent ) 		* 	float( RetirementClaimFactors [ 2 ] [ 2 ] )
+#			if ConsumptionBeliefIndex			== 3 :
+#				PersonalUsageClaimThisAgent 				=	float( AllNeedsThisAgent ) 					* 	float( RetirementClaimFactors [ 0 ] [ 3 ] )
+#				PersonalStorageClaimThisAgent 				=	float( PersonalUsageClaimThisAgent ) 		* 	float( RetirementClaimFactors [ 1 ] [ 3 ] )
+#				ContributionClaimThisAgent 					=	float( PersonalUsageClaimThisAgent ) 		* 	float( RetirementClaimFactors [ 2 ] [ 3 ] )			
+#			if ConsumptionBeliefIndex			== 4 :
+#				PersonalUsageClaimThisAgent 				=	float( PhysiologicalNeedsThisAgent ) 		* 	float( RetirementClaimFactors [ 0 ] [ 4 ] )			
+#				PersonalStorageClaimThisAgent 				=	float( PersonalUsageClaimThisAgent ) 		* 	float( RetirementClaimFactors [ 1 ] [ 4 ] )
+#				ContributionClaimThisAgent 					=	float( PersonalUsageClaimThisAgent ) 		* 	float( RetirementClaimFactors [ 2 ] [ 4 ] )
+#
+# Apply RiskAcceptance (usage) and RiskAvoidance (storage) Cognitive Biases.
+#
+#		RiskAcceptanceEffect 				= 	float( AgentData [ Agent ] [ 3 ] [ 0 ] )
+#		RiskAvoidanceeffect 				= 	float( AgentData [ Agent ] [ 3 ] [ 1 ] )
+#		PersonalUsageClaimThisAgent 		= 	float( PersonalUsageClaimThisAgent ) 	* 	( 	float( 1 )	+ 	RiskAcceptanceEffect 	)
+#		PersonalStorageClaimThisAgent 		= 	float( PersonalStorageClaimThisAgent ) 	*	(	float( 1 ) 	- 	RiskAvoidanceeffect 	)
+#		ContributionClaimThisAgent 			= 	float( ContributionClaimThisAgent ) 	* 	(	float( 1 )	- 	RiskAvoidanceeffect 	)
+#
+		TotalClaimsThisAgent				= 	int( PersonalUsageClaimThisAgent ) + int( PersonalStorageClaimThisAgent ) + int( ContributionClaimThisAgent )
+		TotalClaimsThisTick					=	TotalClaimsThisTick + TotalClaimsThisAgent
+		if SimTick == 0 :
+			FirstTickTotalEnergy			=	FirstTickTotalEnergy + TotalClaimsThisTick
+#
+		PersonalData 						= 	copy.deepcopy( AgentData [ Agent ] [ 0 ] )
+		WorldViewData 						= 	copy.deepcopy( AgentData [ Agent ] [ 1 ] )
+		AffinityData 						= 	copy.deepcopy( AgentData [ Agent ] [ 2 ] )
+		BiasesData 							= 	copy.deepcopy( AgentData [ Agent ] [ 3 ] )
+		NeedsData 							= 	copy.deepcopy( AgentData [ Agent ] [ 4 ] )
+		ClaimsData 							= 	list ( )
+		ClaimsData 							= 	copy.deepcopy( AgentData [ Agent ] [ 5 ] )
+		AllocationsData 					= 	list ( )
+		AllocationsData 					= 	copy.deepcopy( AgentData [ Agent ] [ 6 ] )
+#
+		if len( ClaimsData ) ==	MemoryTicks : # Remove first element in the list and append the (modified) element; result is a max-length history.
+			ClaimsData						.	pop( )
+		ClaimsData 							. 	append( ( 	int( PersonalUsageClaimThisAgent ) , int( PersonalStorageClaimThisAgent ) , 
+															int( ContributionClaimThisAgent ) , int( TotalClaimsThisAgent ) ) )
+#
+		AgentData 							. 	insert( Agent , [ PersonalData , WorldViewData , AffinityData , BiasesData , NeedsData , ClaimsData , AllocationsData ] ) # New data.
+		AgentData							.	pop( Agent + 1 ) # Old data.
+		if Agent == 0 : print "      TotalClaimsAgent0" , TotalClaimsThisAgent
+	print "      TotalClaimsThisTick" , TotalClaimsThisTick
+
+def AllocateEnergyToAgents ( ) :
+#
+# This function allocates the available energy to Agents, in the order they are listed (randomized with Power block every SimTick).
+# Exception: All Agents' Claims in the History Creation period (MemoryTicks in length) will automatically have their Claims met, ie Allocations will be made = Claims.
+#
+	import copy
+#
+	global	SimTick , AgentData , MemoryTicks , FirstTickTotalEnergy , \
+			PrintFlow 
+#
+	if PrintFlow : print "   AllocateEnergyToAgents"
+#
+	for Agent in range ( 0 , len( AgentData ) ) :
+		EnergyAvailableToBeAllocatedThisTick				=	FirstTickTotalEnergy * EnergySupplyFactors [ SimTick ]
+	TotalAllocationsThisTick								=	0
+	for Agent in range ( 0 , len( AgentData ) ) :
+		TotalAllocationsThisAgent							=	0
+		if SimTick < MemoryTicks : # Make TotalAllocations equal TotalClaims during History Creation period, ie cannot result in unmet Claims.
+			PersonalUsageAllocationThisAgent				=	AgentData [ Agent ] [ 5 ] [ SimTick ] [ 0 ]
+			PersonalStorageAllocationThisAgent				=	AgentData [ Agent ] [ 5 ] [ SimTick ] [ 1 ]
+			ContributionAllocationThisAgent					=	AgentData [ Agent ] [ 5 ] [ SimTick ] [ 2 ]
+		else : # Otherwise, total available to allocated is based on the 0 tick's total Claim/Allocation.
+#
+			if AgentData [ Agent ] [ 5 ] [ MemoryTicks - 1 ] [ 0 ] 	<=	EnergyAvailableToBeAllocatedThisTick : # Fulfill full PersonalUsage Claim for this Agent.
+				PersonalUsageAllocationThisAgent			=	AgentData [ Agent ] [ 5 ] [ MemoryTicks - 1 ] [ 0 ]
+				EnergyAvailableToBeAllocatedThisTick 		=	EnergyAvailableToBeAllocatedThisTick - PersonalUsageAllocationThisAgent
+			else : # EnergyAvailable will be exhausted with this Allocation.
+				PersonalUsageAllocationThisAgent 			=	EnergyAvailableToBeAllocatedThisTick
+				EnergyAvailableToBeAllocatedThisTick	 	=	0
+#
+			if AgentData [ Agent ] [ 5 ] [ MemoryTicks - 1 ] [ 1 ] 	<=	EnergyAvailableToBeAllocatedThisTick : # Fulfill full PersonalStorage Claim for this Agent.
+				PersonalStorageAllocationThisAgent 			=	AgentData [ Agent ] [ 5 ] [ MemoryTicks - 1 ] [ 1 ]
+				EnergyAvailableToBeAllocatedThisTick		=	EnergyAvailableToBeAllocatedThisTick - PersonalStorageAllocationThisAgent
+			else: # EnergyAvailble will be exhaused withthis Allocation.
+				PersonalStorageAllocationThisAgent			=	EnergyAvailableToBeAllocatedThisTick
+				EnergyAvailableToBeAllocatedThisTick		=	0
+#
+			if AgentData [ Agent ] [ 5 ] [ MemoryTicks - 1 ] [  2 ] <=	EnergyAvailableToBeAllocatedThisTick : # FulFill full CommunityStorage Claim for this Agent.
+				ContributionAllocationThisAgent		 		=	AgentData [ Agent ] [ 5 ] [ MemoryTicks - 1 ] [ 2 ]
+				EnergyAvailableToBeAllocatedThisTick		=	EnergyAvailableToBeAllocatedThisTick - ContributionAllocationThisAgent
+			else : # EnergyAvailable will be exhausted with this Allocation.
+				ContributionAllocationThisAgent		 		=	EnergyAvailableToBeAllocatedThisTick
+				EnergyAvailableToBeAllocatedThisTick		=	0
+#
+		TotalAllocationsThisAgent							=	TotalAllocationsThisAgent + \
+																PersonalUsageAllocationThisAgent + PersonalStorageAllocationThisAgent + ContributionAllocationThisAgent
+		TotalAllocationsThisTick							=	TotalAllocationsThisTick + TotalAllocationsThisAgent
+#	
+		PersonalData										=	copy.deepcopy( AgentData [ Agent ] [ 0 ] )
+		WorldviewData										=	copy.deepcopy( AgentData [ Agent ] [ 1 ] )
+		AffinityData										=	copy.deepcopy( AgentData [ Agent ] [ 2 ] )
+		BiasesData											=	copy.deepcopy( AgentData [ Agent ] [ 3 ] )
+		NeedsData											=	copy.deepcopy( AgentData [ Agent ] [ 4 ] )
+		ClaimsData											=	list( )
+		ClaimsData											=	copy.deepcopy( AgentData [ Agent ] [ 5 ] )
+		AllocationsData 									=	list( )
+		AllocationsData										=	copy.deepcopy( AgentData [ Agent ] [ 6 ] )
+#
+		if len( AllocationsData ) 							==	MemoryTicks :
+			AllocationsData 								.	pop( ) # Keep list at length MemoryTicks.
+		AllocationsData 									.	append( ( PersonalUsageAllocationThisAgent , PersonalStorageAllocationThisAgent , ContributionAllocationThisAgent , \
+				 												TotalAllocationsThisAgent ) )
+#
+		AgentData 										. 	insert( Agent , [ PersonalData , WorldviewData , AffinityData , BiasesData , NeedsData , ClaimsData , AllocationsData ] )
+		AgentData										.	pop( Agent + 1 )
+		if Agent == 0 : print "      TotalAllocationsAgent0" , TotalAllocationsThisAgent
+	print "      TotalALlocationsThisTick" , TotalAllocationsThisTick
+#
+#	CommunityStorage = MinCommunityStorage + EnergyToBeAllocated # Return unAllocated energy to CommunityStorage, if any.
+#	TotalEnergySupply = 0
+#	TickCount = 0
+#	while 1 == 1 : # Look back stipulated number of Ticks.
+#		TickCount = TickCount + 1
+#		if TickCount <= MemoryTicks :
+#			if LongTick - TickCount >= 1 : # But not before start of simulation.
+#				TotalEnergySupply = TotalEnergySupply + EnergySupply [ LongTick - NumTicks ] [ 1 ]
+#	AverageEnergySupply = TotalEnergySupply / TickCount # TickCount will be MemoryTicks after initial set of ticks.
+#	CommunityStorageDiversionFactor = CommunityStorageDiversionFactor * ( EnergySupply [ LongTick ] / AverageEnergySupply )
+#	FirstMessageThisTick = list() # Prepare for Agent discussions re Allocations.
+#		for Agent in range ( 0 , len ( AgentData ) ) :
+# When enter discussions with affines, force all Agents to express level of satisfaction with allocations vis-a-vis claims prior to consulting affines.
+#			FirstMessageThisTick [ Agent ] = True
+
+Main ( )
