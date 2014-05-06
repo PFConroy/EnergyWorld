@@ -1260,7 +1260,8 @@ def AllocateEnergyToAgents ( ) :
 #               InsertLocation = index ( AgentData [ AddIndex ] [ 1 ] [ 2 ] ) # Insert in same Power block as mother.
 #               AgentData.insert ( InsertLocation, ( ( NewBornPersonalData , NewBornWorldViewData , NewBornAffinityData , NewBornBiasesData , \
 #                    NewBornNeedsData , NewBornClaimsData , NewBornAllocationsData ) )#
-#def DisplayWorld ( ) :
-#
+
+def DisplayWorld ( ) :
+    pass
 
 Main ( )
