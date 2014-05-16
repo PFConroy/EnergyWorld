@@ -623,8 +623,8 @@ def GenerateAgents ( ) :
 			ThoughtLeaderData						=	"No"
 			if MaturityTick <= Age < RetirementTick : # 'ThoughtLeaderFraction' applies to number of Agents between MaturityTick and RetirementTick.
 				if ThoughtLeaderFraction > random.random( ) : # Determine whether to make this Agent a ThoughtLeader.
-					ThoughtLeaderData					=	"Yes"
-					ThoughtLeaders						.	append( AgentID )
+					ThoughtLeaderData				=	"Yes"
+					ThoughtLeaders					.	append( AgentID )
 # Add randomized BiasesData.
 			RiskAcceptanceEffect 					=	round( RiskAcceptanceEffectLow + random.random ( )	* ( RiskAcceptanceEffectHigh - RiskAcceptanceEffectLow ) 	, 2 )
 			RiskAvoidanceEffect 					=	round( RiskAvoidanceEffectLow + random.random ( )	* ( RiskAvoidanceEffectHigh - RiskAvoidanceEffectLow  )     , 2 )
