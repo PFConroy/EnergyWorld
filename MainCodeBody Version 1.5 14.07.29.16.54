@@ -1,0 +1,2199 @@
+def Overview ( ) :
+#
+# This is an overview of EnergyWorld (EW).
+#
+#	EW is intended as one tool for Policy Analysts to use in shaping medium to long term Community Resilience plans.
+#	Its purpose is to help a Policy Analyst understand how a human Population may respond to unexpected, sudden, significant and persistent reductions in resource flows.
+#	In EW, Energy is used as a proxy for all resources, products and services consumed by the Population or consumed for it by Community governance structures.
+#	EW's model simulates the additive effects of members of a Population making individual Claims against, and being granted Allocations from, an EnergySupply flow unknown to them.
+#	The Population consists of Social Agents based on AI's Intelligent Agent paradigm, i.e. they are autonomous, inter-communicate, and possess Beliefs, Desires and Intentions.
+#	In addition, EW's Social Agents possess a number of characteristics not found in the standard Intelligent Agent paradigm, in order to make their behavior more human.
+#
+#	EW's Social Agents have an ActivationProfile, i.e Beliefs, Desires, Intentions (as per current AI practice) and Powers (in AI, Powers are implied - here made explicit and variable).
+#		Beliefs are treated as orthogonal drivers of Desires; the contribution of each Belief to each Desire is specified.
+#		Desires specify the target current and future lifestyles of the Agent, its Affines, and the Community as a whole, reflective of the Agent's Beliefs.
+#		Intentions are the acts Agents engage in to achieve their Desires.
+#			Agents make Claims on EnergySupply; Claim components include PersonalUsage, PersonalStorage and CommunityContribution.
+#			Agents may borrow/loan energy from/to other Agents at rates of interest that vary with Prosperity/Hardship/CreditWorthiness indicators.
+#			Agents may convert PersonalStorage (including borrowed amounts) into Power increases at specified discount rates.
+#		An Agent's Power determines the order in which its Claims against EnergySupply are Allocated; the order of same-Power Agents are randomized.
+#
+#	Each Agent also has a (permanent) WorldViewFilter, i.e. Values, Biases and Reactivities that underlie their responses to hardship/prosperity.
+#			Values represent age/gender-specific fundamental motivations; the degree of contribution of each Value to each Belief is specified.
+#			Biases represent age/gender-specific unconscious heuristics that mediate Agent responses to various conditions.
+#			Reactivities represent age/gender-specific levels of resistance to change, as well as the degree of change made when this level is exceeded.
+#
+#	Each Agent also has a DemographicIdentity, i.e. Age, Gender, PregnancyStatus, CoreNeeds, Affiniites and ThoughLeaderStatus that conditions their approach to life.
+#			Age and Gender are as expected; here, data from Statistics Canada have been used to specify the age/gender makeup of the Population.
+#			PreganancyStatus signals whether a female Agent can become pregnant; Statistics Canada data are used to make an appropriate number of eligible female Agents pregnant.
+#			CoreNeeds represent high/critical-importance Needs for minimal survival; Maslow's Hierarchy of Needs is reflecgted here.
+#			Affinities represent groups whose ethos is a source of affirmation and tangible support in hardship for an Agent.
+#			An Agent may be assigned to be a ThoughtLeader, i.e. one whose opinion is valued more highly than others in Affine discussions.
+#
+#	EnergyWorld simulation has numerous high-level elements:
+#		An initial HistoryCreation period develops Agents' histories to support limited trend-based Claim calculations.
+#		The initial Population grows and shrinks as a result of births and deaths, the latter arising from old age, 'accident', or persistently unmet CoreNeeds.
+#		New Agents take on the WorldView of their mother at birth, and are taken to respond as their mother does until reaching MaturityAge, at which point they become autononmous.
+#		Agents have AffineDiscussions to aid in deciding on how to respond to Allocations made against their Claims.
+#		Agents may request tangible assistance from their Affines, who probabilistically respond according to the strength of the Affinity and their individual capabilities to do so.
+#		Adjustments are made to Beliefs and Desires if an Agent's Claims are thwarted in excess of their Reactivity parameter.
+#			Desires are adjusted according to the contribution of Beliefs to Desires (see algorithm below).
+#			Beliefs are adjusted according to the contributio of Values to Beliefs (see algoirthm below).
+#			CoreNeeds are adjusted according to their level in the Needs hierarchy, except for PhysiologicalNeeds, which cannot be reduced.
+#		All adjustments are conditioned by Agents' Biases.
+#
+#	In EnergyWorld 1.5:
+#		Beliefs - randomly assigned at setup and during simulation based on user-supplied probability density function
+#			Sufficiency of EnergySupply to meet current and future Personal Claims
+#			Sufficiency of EnergySupply to meet current and future Community Claims
+#			Willingess of Community to support Agents experiencing hardship
+#		Desires - randomly assigned at setup and during simulation based on user-supplied probability density function
+#			Current lifestyle
+#			Retirement lifestyle
+#			Community support capability
+#		Intentions - derived from Desires, i.e. not pre-specified
+#			PersonalUsage Claim
+#			PersonalStorage Claim
+#			CommunityContribution Claim
+#			Inter-Agent transactions
+#		Power - only one at present.
+#			Order of access to EnergySupply - randomly assigned at setup and during simulation based on user-supplied probability density function
+#		Values - randomly assigned at setup based on user-supplied probability density function; not varied during simulation
+#			Commitment to personal development
+#			Commitment to humanistic principles in dealing with other individuals
+#			Commitment to sustainability in matters of world systems
+#		Biases - randomly assigned at setup based on user-supplied probability density function; not varied during simulation
+#			RiskAvoidanceEffect
+#			BelongingnessEffect
+#			HaloEffect
+#			MemoryEffect
+#			DenialEffect
+#		Reactivities - randomly assigned at setup based on user-supplied probability density function; not varied during simulation
+#			Single transaction Upwards
+#			Cumulative transactions Upwards
+#			Single transaction Downwards
+#			Cumulative transactions Downwards
+#		Age - assigned at setup based on Statistics Canada data
+#		Gender - assigned at setup based on Statistics Canada data
+#		PreganncyStatus - parameter-driven pregnancy delay and assignment during simulation
+#		CoreNeeds - randomly assigned at setup from user-supplied probability density function; not varied during simulation
+#			Physiological
+#			Safety
+#			Attachment
+#			Esteem
+#			Actualization
+#		Affinities  - randomly assigned at setup based on user-supplied probability density function; not varied during simulation
+#			PersonalRelationship (Strong, Medium, Weak)
+#			CulturalBinding (Strong, Medium, Weak)
+#			SharedPrinciple (Strong, Medium, Weak)
+#		ThoughLeaderStatus (Strong, Medium, Weak)
+#
+#	Algorithm for adjusting Agent parameters:
+#		For eachg Agent in turn, if Satisfaction exceeds Reactivity (up or down, single or cumulative), Belief/Desire parameters are adjusted as follows:
+#		Satisfaction will be taken as the 'distance' that defines the parameter sets the Agent may be moved to to reduce the 'distance' i.e. Satisfaction, to 0.
+#		Only Belief and Desire parameters are eligible for adjustment.
+#		Desires will be adjusted in increasing order of total BeliefContributions.
+#		The Desire with the lowest BeliefContribution is adjusted by one unit (up or down as the case may be).
+#		If sum-of-squared-difference eliminates the (remaining) 'distance', stop.
+#		Otherwise, do the same for the Desire with the next-lowest BeliefContibution.
+#		If necessary, cycle back to the Desire with the lowest BeliefContribution, i.e. adjust by one more unit.
+#		Continue until 'distance' has been reduced to 0, or until no further adjustment of Desire parameters is possible, in which case proceed as follows.
+#		Adjust the Belief with the greatest overall contribution to Desires, adjust it by one unit  (up or down as the case may be) and repeat the Desire-adjustment process above
+#			(after restoring Desire parameters to original values - expected values?).
+#		Continue until 'distance' has been reduced to 0, or until no further adjustment of Belief paramters is possible, in which case flag the Agent for death.
+#
+	pass
+
+def Main ( ) :
+#
+	global	NumSimulations , NumTicksEachSimulation , SimulationID , SimulationTick , \
+			PrintFlow , TestSamplePrint , TestSampleSize
+#
+	PrintFlow						=	True
+	TestSamplePrint					=	True
+	TestSampleSize					=	5
+	if PrintFlow : print "Start"
+	CharacterizeSimulationSuite ( )
+	CharacterizePopulation ( )
+	CharacterizeEnergySupply ( )
+	for SimulationID in range ( 0 , NumSimulations ) :
+		GenerateAgents ( )
+		GenerateHistory ( )
+		for SimulationTick in range ( 0 , NumTicksEachSimulation ) :
+			if PrintFlow : print "   SimulationTick:" , SimulationTick
+			RandomizeClaimsAndAllocationsOrder ( )
+			ClaimEnergy ( )
+			AllocateAndTransferEnergy ( )
+			DiscussWithAffines ( )
+			AssessAdjustActivationProfiles ( )
+			AdjustPopulation ( )
+			DisplayWorld ( )
+	if PrintFlow: print "End"
+
+def CharacterizeSimulationSuite ( ) :
+#
+# This function will be enhanced to provide for suites of simulations, eg Monte Carlo. At this point it specifies that a single simulation scenario should be run.
+#
+	global 	NumSimulations , NumTicksEachSimulation , SimulationID , SimulationTick , \
+			MemoryTicks , MaxMessagesPerTickPerAgent , MaxMessagesPerBatch , \
+			PrintFlow , TestSamplePrint , TestSampleSize
+#
+	if PrintFlow : print "   Characterize Simulation Suite"
+#
+	NumSimulations 					=	1		# No current impact. Allows for future Monte Carlo and other types of experiments.
+	NumTicksEachSimulation			=	2		# Same for all simulations.
+#
+	MemoryTicks 					=	3		# Length of History Creation period, as well as backward time horizon for trend analysis.
+	MaxMessagesPerTickPerAgent 		=	10		# Measure of message absorption rate of Agents; also limits exponential growth of Affine Discussions.
+	MaxMessagesPerBatch 			=	5		# Finer grain on the message absorption rate; allows more Agents to work through their entire InBox.
+
+	print "      NumSimulations, NumTicksEachSimulation:" , NumSimulations , NumTicksEachSimulation
+	print "      MemoryTicks, MaxMessagesPerTickPerAgent, MaxMessagesPerBatch:" , MemoryTicks, MaxMessagesPerTickPerAgent, MaxMessagesPerBatch
+
+def CharacterizePopulation ( ) :
+#
+# This function acquires age/gender, births/deaths, values/biases, core needs, beliefs/desires//powers, and affinities that will be assigned to the starting population.
+#
+	import	math
+	import	random
+#
+	global	StartingPopulationSize , MaximumAge , RetirementAge , MaturityAge , NumMalesByAge , NumFemalesByAge , MalePopulationFraction , \
+			BirthRate , DeathRate , GestationTicks , PregnancyDelayTicks , MaxPregnantAge , \
+			ThresholdViolationAllowanceLow , ThresholdViolationAllowanceHigh , ProsperityTrendThreshold , HardshipTrendThreshold , PersonalStorageToPowerConversionFactor , \
+			PDFSpec , PowerBlockData , MaximumLikelyEnergyClaim , MostLikelyMaxEnergyConsumptiveParameterSet , PersonalStorageToPowerConversionFactor , PowerToPersonalStorageConversionFactor , \
+			AffinitiesSpec , ThoughtLeaderFraction , ThoughtLeaderWeights , \
+			PrintFlow , TestSamplePrint , TestSampleSize , SampleAgentIDs
+#
+	if PrintFlow : print "   Characterize Population"
+#
+#
+#
+	if PrintFlow : print "      Get Age, Gender Data"
+# 
+	StartingPopulationSize 			=	200			# Final population size may vary to a small extent due to roundoff in various calculations.
+	PopulationCountBasis 			=	0.2 * 0.01 	# StatsCan data below shows % for 5-year periods; tuples are in the form (age,%male,%female).
+	ProFormaPopulationSpec 			=	list ( ) 	# From http://www.statcan.gc.ca/tables-tableaux/sum-som/l01/cst01/demo10a-eng.htm
+	ProFormaPopulationSpec			=	[ \
+		( 0  , 5.6 , 5.3 ) , ( 1  , 5.6 , 5.3 ) , ( 2  , 5.6 , 5.3 ) , ( 3  , 5.6 , 5.3 ) , ( 4  , 5.6 , 5.3 ) , \
+		( 5  , 5.5 , 5.2 ) , ( 6  , 5.5 , 5.2 ) , ( 7  , 5.5 , 5.2 ) , ( 8  , 5.5 , 5.2 ) , ( 9  , 5.5 , 5.2 ) , \
+		( 10 , 5.5 , 5.1 ) , ( 11 , 5.5 , 5.1 ) , ( 12 , 5.5 , 5.1 ) , ( 13 , 5.5 , 5.1 ) , ( 14 , 5.5 , 5.1 ) , \
+		( 15 , 6.4 , 6.0 ) , ( 16 , 6.4 , 6.0 ) , ( 17 , 6.4 , 6.0 ) , ( 18 , 6.4 , 6.0 ) , ( 19 , 6.4 , 6.0 ) , \
+		( 20 , 7.1 , 6.8 ) , ( 21 , 7.1 , 6.8 ) , ( 22 , 7.1 , 6.8 ) , ( 23 , 7.1 , 6.8 ) , ( 24 , 1.1 , 6.8 ) , \
+		( 25 , 6.9 , 6.8 ) , ( 26 , 6.9 , 6.8 ) , ( 27 , 6.9 , 6.8 ) , ( 28 , 6.9 , 6.8 ) , ( 29 , 6.9 , 6.8 ) , \
+		( 30 , 7.0 , 6.9 ) , ( 31 , 7.0 , 6.9 ) , ( 32 , 7.0 , 6.9 ) , ( 33 , 7.0 , 6.9 ) , ( 34 , 7.0 , 6.9 ) , \
+		( 35 , 6.7 , 6.6 ) , ( 36 , 6.7 , 6.6 ) , ( 37 , 6.7 , 6.6 ) , ( 38 , 6.7 , 6.6 ) , ( 39 , 6.7 , 6.6 ) , \
+		( 40 , 6.8 , 6.7 ) , ( 41 , 6.8 , 6.7 ) , ( 42 , 6.8 , 6.7 ) , ( 43 , 6.8 , 6.7 ) , ( 44 , 6.8 , 6.7 ) , \
+		( 45 , 7.4 , 7.2 ) , ( 46 , 7.4 , 7.2 ) , ( 47 , 7.4 , 7.2 ) , ( 48 , 7.4 , 7.2 ) , ( 49 , 7.4 , 7.2 ) , \
+		( 50 , 7.9 , 7.7 ) , ( 51 , 7.9 , 7.7 ) , ( 52 , 7.9 , 7.7 ) , ( 53 , 7.9 , 7.7 ) , ( 54 , 7.9 , 7.7 ) , \
+		( 55 , 7.2 , 7.1 ) , ( 56 , 7.2 , 7.1 ) , ( 57 , 7.2 , 7.1 ) , ( 58 , 7.2 , 7.1 ) , ( 59 , 7.2 , 7.1 ) , \
+		( 60 , 6.0 , 6.0 ) , ( 61 , 6.0 , 6.0 ) , ( 62 , 6.0 , 6.0 ) , ( 63 , 6.0 , 6.0 ) , ( 64 , 6.0 , 6.0 ) , \
+		( 65 , 4.9 , 5.1 ) , ( 66 , 4.9 , 5.1 ) , ( 67 , 4.9 , 5.1 ) , ( 68 , 4.9 , 5.1 ) , ( 69 , 4.9 , 5.1 ) , \
+		( 70 , 3.4 , 3.7 ) , ( 71 , 3.4 , 3.7 ) , ( 72 , 3.4 , 3.7 ) , ( 73 , 3.4 , 3.7 ) , ( 74 , 3.4 , 3.7 ) , \
+		( 75 , 2.5 , 2.9 ) , ( 76 , 2.5 , 2.9 ) , ( 77 , 2.5 , 2.9 ) , ( 78 , 2.5 , 2.9 ) , ( 79 , 2.5 , 2.9 ) , \
+		( 80 , 1.8 , 2.4 ) , ( 81 , 1.8 , 2.4 ) , ( 82 , 1.8 , 2.4 ) , ( 83 , 1.8 , 2.4 ) , ( 84 , 1.8 , 2.4 ) , \
+		( 85 , 0.9 , 1.6 ) , ( 86 , 0.9 , 1.6 ) , ( 87 , 0.9 , 1.6 ) , ( 88 , 0.9 , 1.6 ) , ( 89 , 0.9 , 1.6 ) , \
+		( 90 , 0.4 , 1.0 ) , ( 91 , 0.4 , 1.0 ) , ( 92 , 0.4 , 1.0 ) , ( 93 , 0.4 , 1.0 ) , ( 94 , 0.4 , 1.0 ) , \
+		( 95 , 0.4 , 1.0 ) , ( 96 , 0.4 , 1.0 ) , ( 97 , 0.4 , 1.0 ) , ( 98 , 0.4 , 1.0 ) , ( 99 , 0.4 , 1.0 )   ]
+#
+	MaturityAge 					=	18	# Claims and Affine Discussions are taken to be reflect immature Agents' inherited perceptions.
+	RetirementAge 					=	65	# Taken to delimit Agents' 'productive' years, except for investment activity.
+	MaximumAge						=	len ( ProFormaPopulationSpec ) - 1 # Assumes all ages are represented in ProFormaPopulationSpec.
+#
+	NumMalesByAge 					=	list ( )
+	NumFemalesByAge					=	list ( )
+	NumMales						=	0
+	NumFemales 						=	0
+	for AgeIndex in range ( 0 , len ( ProFormaPopulationSpec ) ) :
+		NumMalesThisAge				=	int ( round ( StartingPopulationSize * 0.5 * ProFormaPopulationSpec [ AgeIndex ] [ 1 ] * PopulationCountBasis ) )
+		NumMalesByAge				.   append ( NumMalesThisAge )
+		NumFemalesThisAge			=	int ( round ( StartingPopulationSize * 0.5 * ProFormaPopulationSpec [ AgeIndex ] [ 2 ] * PopulationCountBasis ) )
+		NumFemalesByAge				.   append ( NumFemalesThisAge )
+		NumMales 					=	NumMales + NumMalesThisAge
+		NumFemales 					=	NumFemales + NumFemalesThisAge
+	StartingPopulationSize			=	NumMales + NumFemales # May differ from initial assignment due to roundoff in the above.
+	MalePopulationFraction			=	float ( NumMales ) / float ( StartingPopulationSize )
+	if TestSamplePrint :
+		print "      Starting Population, Male Fraction: " , StartingPopulationSize , round ( MalePopulationFraction , 4 )
+		print "      Select Agents to track"
+		SampleAgentIDs				=	list ( )
+		SampleAgentIDs				=	random.sample ( xrange ( StartingPopulationSize ) , TestSampleSize )
+		print "         Agents to track:" , SampleAgentIDs
+#
+#
+#
+	if PrintFlow : print "      Get Birth, Death, Pregnancy Data"
+#
+# BirthRate is derived from
+#	http://www.statcan.gc.ca/tables-tableaux/sum-som/l01/cst01/demo02a-eng.htm (population) and # http://www.statcan.gc.ca/tables-tableaux/sum-som/l01/cst01/demo04a-eng.htm (births)
+#		Statistics Canada Births: 2009/10 379,373; 2010/11 376,951; 2011/12 378,752; 2012/13 383,822
+#		Statistics Canada Population: 2009 33,628,600; 2010 34,005,300; 2011 34,342,800; 2012 34,754,300
+#
+	BirthRate 						= 	round ( (	float( 379390 ) / float( 33628600 ) + float( 376951 ) / float( 34005300 ) + \
+											 		float( 378752 ) / float( 34343800 ) + float( 383822 ) / float( 34754300 ) ) / 4.0 , 4 )
+#
+# DeathRate is derived from http://www.statcan.gc.ca/tables-tableaux/sum-som/l01/cst01/health30a-eng.htm (average of rates 2007-2011 per 100,000).
+#
+	DeathRate						=	round ( (	float ( 539.8 ) + float ( 531.3 ) + float ( 515.0 )  + float ( 501.0 ) + float ( 489.0 ) ) / 500000.0 , 4 )
+#
+	GestationTicks					=	1	# Number of Ticks from impregnation to delivery.
+	PregnancyDelayTicks				=	2	# Number of Ticks a female must wait before becoming pregnant again.
+	MaxPregnantAge					=	45	# Age after which no female will be made pregnant.
+#
+#
+#
+	if PrintFlow : print "      Get PDF Data"
+#
+# Probability density functions are specified for Values, Biases, CoreNeeds, Reactivities, Beliefs, Desires and Power.
+# Each PDF is in the form ( Type , Descriptor , ( LowRangeValue , HighRangeValue ) , ( Gender , ( AgeSpecificData ) ) , where
+#	AgeSpecificData in the form ( ( lowAge , HighAge ) , ListOfFrequencies ) , with ListOfFrequencies = ( F1 , F2 , ... , Fn ); n being a default value unless modified by the user.
+#	Domain values of all PDFs are integers in ( 0 , len ( ListOfFrequencies ) ).
+#
+	PDFSpec							=	list ( )
+	PDFSpec							=	[ \
+											( "Value" , "Degree of commitment to personal development" , ( 0.0 , 1.0 ) , \
+												( "Male" 	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) , \
+												( "Female"	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) ) , \
+											( "Value" , "Degree of commitment to ethical prinicples in dealing with others" , ( 0.0 , 1.0 ) , \
+												( "Male" 	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) , \
+												( "Female"	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) ) , \
+											( "Value" , "Degree of commitment to sustainability in matters of world systems" , ( 0.0 , 1.0 ) , \
+												( "Male" 	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) , \
+												( "Female"	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) ) , \
+											( "Bias" , "RiskAvoidance Effect" , ( 0.0 , 1.0 ) , \
+												( "Male" 	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) , \
+												( "Female"	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) ) , \
+											( "Bias" , "Belongingness Effect" , ( 0.0 , 1.0 ) , \
+												( "Male" 	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) , \
+												( "Female"	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) ) , \
+											( "Bias" , "Halo Effect" , ( 0.0 , 1.0 ) , \
+												( "Male" 	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) , \
+												( "Female"	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) ) , \
+											( "Bias" , "Memory Effect" , ( 0.0 , 1.0 ) , \
+												( "Male" 	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) , \
+												( "Female"	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) ) , \
+											( "Bias" , "Denial Effect" , ( 0.0 , 1.0 ) , \
+												( "Male" 	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) , \
+												( "Female"	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) ) , \
+											( "CoreNeed" , "Physiological" , ( 80, 100 ) , \
+												( "Male" 	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) , \
+												( "Female"	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) ) , \
+											( "CoreNeed" , "Safety" , ( 60 , 80 ) , \
+												( "Male" 	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) , \
+												( "Female"	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) ) , \
+											( "CoreNeed" , "Attachment" , ( 40 , 60 ) , \
+												( "Male" 	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) , \
+												( "Female"	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) ) , \
+											( "CoreNeed" , "Esteem" , ( 20 , 40 ) , \
+												( "Male" 	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) , \
+												( "Female"	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) ) , \
+											( "CoreNeed" , "Actualization" , ( 0 , 20 ) , \
+												( "Male" 	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) , \
+												( "Female"	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) ) , \
+											( "Reactivity Up" , "Adjsutment when positive Satisfaction values" , ( 0.0 , 1.0 ) , \
+												( "Male" 	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) , \
+												( "Female"	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) ) , \
+											( "Reactivity Down" , "Adjustment when negative Satisfaction values" , ( 0.0 , 1.0 ) , \
+												( "Male" 	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) , \
+												( "Female"	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) ) , \
+											( "Belief" , "Degree of sufficiency of EnergySupply to meet current Claims"	, ( 0.0 , 1.0 ) , \
+												( "Male" 	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) , \
+												( "Female"	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) ) , \
+											( "Belief" , "Degree of sufficiency of EnergySupply to meet future Claims" , ( 0.0 , 1.0 ) , \
+												( "Male" 	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) , \
+												( "Female"	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) ) , \
+											( "Belief" , "Degree of Community ability to support Agents experiencing hardship" , ( 0.0 , 1.0 ) , \
+												( "Male" 	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) , \
+												( "Female"	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) ) , \
+											( "Desire" , "Degree of comfort of current lifestyle" , ( 1 , 10 ) , \
+												( "Male" 	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) , \
+												( "Female"	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) ) , \
+											( "Desire" , "Degree of comfort in retirement", ( 1 , 10 ) , \
+												( "Male" 	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) , \
+												( "Female"	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) ) , \
+											( "Desire" , "Degree of community support in hard times" , ( 1 , 10 ) , \
+												( "Male" 	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) , \
+												( "Female"	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) ) , \
+											( "Power" , "Order of access to EnergySupply", ( 0 , 10 ) , \
+												( "Male" 	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 1 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 1 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) , \
+												( "Female"	, ( ( 0	 ,  9 )	, ( 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+		 													, ( ( 10 , 19 )	, ( 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 20 , 29 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 30 , 39 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 40 , 49 ) , ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 50 , 59 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 1 ) ) \
+															, ( ( 60 , 69 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 1 ) ) \
+															, ( ( 70 , 79 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 80 , 89 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) \
+															, ( ( 90 , 99 )	, ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) ) ) ) \
+										]
+#
+#
+#
+	if PrintFlow : print "      Get Lifestyle Range Data"
+#
+# This section gnerates data in preparation for the HistoryCreation function below, in which Agent Claims will be generated according to the set of parameters generated based on
+# the above probability density functions. Each Agent's parameter set will be compared, using a 'distsance' metric, to the parameter set most likely to produce the msot
+# energy-consumptive Agent behavior, defined here in the form of a set of tuples of the form (Type,Subtype,Value), where Value can be Max, Min or Mid.
+#
+	MostLikelyMaxEnergyConsumptiveParameterSet			=	list ( )
+	MostLikelyMaxEnergyConsumptiveParameterSet			=	[ \
+																( "Value"		, "Degree of commitment to personal development"										, "Min" ) , \
+																( "Value"		, "Degree of commitment to ethical prinicples in dealing with others"					, "Min" ) , \
+																( "Value"		, "Degree of commitment to sustainability in matters of world systems"					, "Min" ) , \
+																( "Bias"		, "RiskAvoidance Effect"																, "Min" ) , \
+																( "Bias"		, "Belongingness Effect"																, "Min" ) , \
+																( "Bias"		, "Halo Effect"																			, "Min" ) , \
+																( "Bias"		, "Memory Effect"																		, "Min" ) , \
+																( "Bias"		, "Denial Effect"																		, "Min" ) , \
+																( "CoreNeed"	, "Physiological"																		, "Max" ) , \
+																( "CoreNeed"	, "Safety"																				, "Max" ) , \
+																( "CoreNeed"	, "Attachment"																			, "Min" ) , \
+																( "CoreNeed"	, "Esteem"																				, "Max" ) , \
+																( "CoreNeed" 	, "Actualization"																		, "Min" ) , \
+																( "Reactivity"	, "Adjustment when positive Satisfaction values" 										, "Min" ) , \
+																( "Reactivity"	, "Adjustment when negative Satisfaction values" 										, "Min" ) , \
+																( "Belief"		, "Degree of sufficiency of EnergySupply to meet current Claims"						, "Max" ) , \
+																( "Belief"		, "Degree of sufficiency of EnergySupply to meet future Claims"							, "Max" ) , \
+																( "Belief"		, "Degree of Community ability to support Agents experiencing hardship"					, "Max" ) , \
+																( "Desire"		, "Degree of comfort of current lifestyle"												, "Max" ) , \
+																( "Desire"		, "Degree of comfort in retirement"														, "Max" ) , \
+																( "Desire"		, "Degree of community support in hard times"											, "Min" ) , \
+																( "Power"		, "Order of access to EnergySupply"														, "Max" )   \
+															]
+#
+	MaximumEnergyClaimMultiple						=	1000.0 # A user-specified mutliple of minimum PhysiologicalNeeds.
+	for PDFIndex in range ( 0 , len ( PDFSpec ) ) :
+		if PDFSpec [ PDFIndex ] [ 0 ] == "CoreNeed" and PDFSpec [ PDFIndex ] [ 1 ] == "Physiological" :
+			MinimumViableEnergyClaim				=	PDFSpec [ PDFIndex ] [ 2 ] [ 0 ]
+	MaximumLikelyEnergyClaim						=	int ( round ( float ( MaximumEnergyClaimMultiple ) * float ( MinimumViableEnergyClaim ) ) )
+	print "      MaxLikelyEnergyClaim:" , MaximumLikelyEnergyClaim
+#
+	ThresholdViolationAllowanceLow					=	0.01	# To avoid triggering a threshold violation in the nth decimal place.
+	ThresholdViolationAllowanceHigh					=	0.05	# Ditto.
+	ProsperityTrendThreshold						=	0.60	# Ratio of CountPositiveSatisfaction / len(SatisfactionsData).
+	HardshipTrendThreshold							=	0.75	# Ratio of CountNegativeSatisfaction / len(SatisfactionsData).
+	PersonalStorageToPowerConversionFactor			=	500.0	# Number of PersonalStorage units required to obtina 1 Power unit.
+	PowerToPersonalStorageConversionFactor			=	1 / 1000.0	# Number of PersonalStorage units obtained in exchange for 1 Power unit.
+#
+# 
+#
+	if PrintFlow : print "      Initialize PowerBlockData"
+#
+# Since Allocations against Claims are made in decreasing Power order until EnergySupply is exhausted, EnergyWorld maintains AgentData in this order.
+# To avoid searching for Power block divisions in AgentData at each round of Allocations, PowerBlockData notes the beginning and end of same-Power blocks.
+# This is updated every time an Agent is added or deleted, and when the Power level of an Agent is changed.
+#
+	PowerBlockData									=	list ( ) # Used in determining Agents' order of access to EnergySupply.
+	for PDFIndex in range ( 0 , len ( PDFSpec ) ) :
+		if PDFSpec [ PDFIndex ] [ 0 ] == "Power" and PDFSpec [ PDFIndex ] [ 1 ] == "Order of access to EnergySupply" :
+			for PowerCount in range ( 0 , PDFSpec [ PDFIndex ] [ 2 ] [ 1 ] + 1 ) :
+				PowerBlockData						.   append ( [ ] )
+	print "         Initial PowerBlock Data:"  , PowerBlockData
+#
+#
+#
+	if PrintFlow : print "      Get Affinities, ThoughtLeader Data"
+#
+#	AffinitiesSpec is a list of tuples of the form:
+#		( Type , ( Strength , NumAffinityGroups , ( GroupSizeLow , GroupSizeHigh ) , ( PropsensityLow, PropensityHigh ) , ( LevelLow, LevelHigh ) ) )
+#	Method:
+#		For each Type and Strength of Affinity, make NumAffinityGroups of size (range) sampled from population; assign unique AffnityID, Propensity (range) and Level (range).
+#		(-1 as NumAffinityGroups means determine NumAffinityGroups from population divided by size (range); otherwise take size (range) as % of population.)
+#
+	AffinitiesSpec 				=	list ( )
+	AffinitiesSpec				=	[	( "PersonalRelationship" , 	"PR" , \
+											( "Strong" 	, "Hi"	, -1 , 	( 1 , 10 ) , ( 0.7 , 1.0 ) , ( 0.3 , 0.5 ) ) , \
+											( "Medium"	, "Md"	, -1 , 	( 2 , 10 ) , ( 0.5 , 0.7 ) , ( 0.1 , 0.3 ) ) , \
+											( "Weak"	, "Lo"	, -1 , 	( 5 , 30 ) , ( 0.2 , 0.4 ) , ( 0.0 , 0.1 ) ) 	) , \
+										( "CulturalBinding" , 		"CB", \
+											( "Strong"	, "Hi"	, 2 , 	( 2 , 10 ) , ( 0.6 , 0.8 ) , ( 0.2 , 0.4 ) ) , \
+											( "Medium"	, "Md"	, 5 , 	( 2 , 10 ) , ( 0.3 , 0.5 ) , ( 0.1 , 0.2 ) ) , \
+											( "Weak"	, "Lo"	, 10 , 	( 2 , 10 ) , ( 0.1 , 0.2 ) , ( 0.0 , 0.1 ) )	) , \
+										( "SharedPrinciple" , 		"SP" , \
+									 		( "Strong"	, "Hi"	, 2 , 	( 5 , 10 ) , ( 0.5 , 0.6 ) , ( 0.2 , 0.3 ) ) , \
+											( "Medium"	, "Md"	, 5 , 	( 5 , 10 ) , ( 0.1 , 0.2 ) , ( 0.0 , 0.1 ) ) , \
+											( "Weak"	, "Lo"	, 10 , 	( 5 , 10 ) , ( 0.1 , 0.2 ) , ( 0.0 , 0.1 ) ) 	)	]
+#
+	ThoughtLeaderFraction 		=	0.1					# Over population betwwen MaturityAge and RetirementAge.
+	ThoughLeaderWeights			=	list ( )
+	ThoughtLeaderWeights		=	[ 5.0 , 3.0 , 1.5 ] # Strong vs Medium vs Weak effect of ThoughtLeader Affines on an Agent.
+
+def CharacterizeEnergySupply ( ) :
+#
+# This function develops a complete schedule of energy to be supplied to EnergyWorld's population over a simulation.
+#
+# Takes as input ( StartTick, FactorOfFirstTickValue , VariabilityTillNextTick) tuples; all StartTick values are integer, other values integer or float >= 0.
+# Tuples must have progressively increasing StartTick values, which need not be sequential.
+#
+	import	random
+#
+	global	EnergySupplySpec , EnergySupplyFactors , NumTicksEachSimulation , InitialCommunityStorageMultiple , MaxCommunityStorageDepletionRate , \
+			PrintFlow
+#
+	if PrintFlow : print "   Characterize Energy"
+#
+	if PrintFlow : print "      Get Energy Supply Specification"
+	EnergySupplySpec 						=	list ( )
+	EnergySupplySpec 						=	[ ( 0 , 1.0 , 0.05 ) , ( 5 , 0.8 , 0.10 ) , ( 6 , 0.6 , 0.15 ) , ( 9 , 0.4 , 0.20 ) ]
+	InitialCommunityStorageMultiple			=	0.05 	# Will be applied to first Tick's energy supply for first Tick after History Creation period.
+	MaxCommunityStorageDepletionRate		=	float ( 1 ) / float ( NumTicksEachSimulation ) # To last the entire simulation, at minimum.
+#
+	if PrintFlow : print "      Generate Energy Supply"
+	EnergySupplyFactors 					=	list ( )
+	for SpecIndex in range ( 0 , len ( EnergySupplySpec ) ) :
+		Factor 								=	EnergySupplySpec [ SpecIndex ] [ 1 ]
+		SameFactorTickLow 					=	EnergySupplySpec [ SpecIndex ] [ 0 ]
+		SameFactorTickHigh 					=	NumTicksEachSimulation
+		if SpecIndex < len ( EnergySupplySpec ) - 1 :
+			 SameFactorTickHigh 			=	EnergySupplySpec [ SpecIndex + 1 ] [ 0 ]
+		for TickIndex in range ( SameFactorTickLow , SameFactorTickHigh ) :
+			VariabilityFactor				=	random.random ( )
+			if VariabilityFactor > 0.5 :
+				VariabilityFactor			=	- VariabilityFactor
+			VariationThisTick				=	VariabilityFactor * EnergySupplySpec [ SpecIndex ] [ 2 ]
+			EnergySupplyFactors 			.	append ( round ( Factor * ( 1.0 + VariationThisTick ) , 4 ) )
+	print "         Randomized SupplyFactors:" , EnergySupplyFactors
+
+def GenerateAgents ( ) :
+#
+# This function generates the initial set of Agents for the current simulation.
+#
+	import	math
+	import	random
+	import	copy
+#
+	global	MaturityAge , RetirementAge , MaximumAge , NumMalesByAge , NumFemalesByAge , \
+			AgentData , MaxAgentID , PDFSpec , ThoughtLeaderFraction , ThoughtLeaders , CommunityStorage ,\
+			PrintFlow , TestSamplePrint
+#
+	if PrintFlow : print "   GenerateAgents"
+#
+	AgentData														=	list ( )	# AgentData is the primary database defining Agents' makeup and activities throughout each simulation.
+	AffinitiesData													=	list ( )	# Prepare for initial identification of Affinity groups this Agent belongs to.
+	ThoughtLeaders													=	list ( )	# Similarly, prepare to build a list of Thoughtleaders.
+	ClaimsData 														=	list ( )	# Claims will be added later.
+	AllocationsData 												=	list ( )	# Allocations will be added later.
+	TransfersData													=	list ( )	# Transfers will be added later.
+	SatisfactionsData												=	list ( )	# Satisfaction judgments will be added later.
+	TotalPersonalStorage											=	0			# May be used as a draw-down resource should later Claims not be met.
+	CommunityStorage												=	0
+#
+	AgentID															=	- 1
+	for Age in range ( 0 , MaximumAge + 1 ) :
+		Gender														=	"Female" # Initialize gender alternation.
+		for AgentIndex in range ( 0 , NumMalesByAge [ Age ] + NumFemalesByAge [ Age ] ) :
+			AgentID													=	AgentID + 1
+# DemograhicIdentity: Age, Gender, PregnancyStatus, Affinities, ThoughLeader Data.
+			DemographicIdentity										=	list ( )
+			if Gender == "Female" :
+				Gender												=	"Male"
+				GenderIndex											=	0
+			else :
+				Gender												=	"Female"
+				GenderIndex											=	1
+			PregnancyStatus											=	GetPregnancyStatus ( Gender )
+			ThoughtLeaderStatus										=	False
+			if MaturityAge <= Age < RetirementAge : 			# 'ThoughtLeaderFraction' applies to number of Agents between MaturityAge and RetirementAge.
+				if ThoughtLeaderFraction > random.random ( ) :	# Determine whether to make this Agent a ThoughtLeader.
+					ThoughtLeaderStatus								=	True
+					ThoughtLeaders									.	append ( AgentID )	# Add to list of ThoughtLeaders.
+			DemographicIdentity										=   ( Age , Gender , PregnancyStatus , AffinitiesData , ThoughtLeaderStatus )
+# WorldViewFilter: Values, Biases, CoreNeeds, Reactivities Data.
+			WorldViewFilter											=	list ( )
+			for ParameterIndex in range ( 0 , len ( PDFSpec ) ) :
+				if 	PDFSpec [ ParameterIndex ] [ 0 ] == "Value" or PDFSpec [ ParameterIndex ] [ 0 ] == "Bias" or \
+					PDFSpec [ ParameterIndex ] [ 0 ] == "Reactivity" or PDFSpec [ ParameterIndex ] [ 0 ] == "CoreNeed" :
+					WorldViewFilter									.   append ( (	PDFSpec [ ParameterIndex ] [ 0 ] , PDFSpec [ ParameterIndex ] [ 1 ] , \
+																					GetRandomValueFromPDFSpec ( AgentID , ParameterIndex , GenderIndex , Age ) ) )
+# AcdtiviationProfile: Beliefs, Desires, Powers Data.
+			ActivationProfile										=	list ( )
+			for ParameterIndex in range ( 0 , len ( PDFSpec ) ) :
+				if PDFSpec [ ParameterIndex ] [ 0 ] == "Belief" or PDFSpec [ ParameterIndex ] [ 0 ] == "Desire" or PDFSpec [ ParameterIndex ] [ 0 ] == "Power" :
+					ActivationProfile								.   append ( (	PDFSpec [ ParameterIndex ] [ 0 ] , PDFSpec [ ParameterIndex ] [ 1 ] , \
+																					GetRandomValueFromPDFSpec ( AgentID , ParameterIndex , GenderIndex , Age ) ) )
+#
+			CreateAgent ( 	AgentID , DemographicIdentity , WorldViewFilter , ActivationProfile , \
+							ClaimsData , AllocationsData , TransfersData , SatisfactionsData , TotalPersonalStorage )
+#
+	AssignAffinities ( )	# Requires all Agents to be generated before completion.
+	MaxAgentID														=	AgentID
+#
+#	if TestSamplePrint : ShowTestSample ( "EndGenerateAgents" )
+
+def GetPregnancyStatus ( Gender ) :
+#
+# This function determines the initial PregnancyStatus of the Agent.
+#
+	global	BirthRate , StartingPopulationSize , DeathRate , PregnancyDelayTicks , MaximumAge , NumFemalesByAge , MaturityAge , MaxPregnantAge
+#
+	if Gender == "Male" : return "Never"
+#
+# Make some females pregnant and make some others recently-delivered.
+# Method:
+#	Calculate number of females to make pregnant as BirthRate * StartingPopulation.
+#	Calculate number of females that gave birth prior to the simulation as StartingPopulation * (BirthRate - DeathRate) * PregnancyDelayTicks, with PregnancyStatus = -PregnancyDelayTicks.
+#	Evenly spread these over new female Agents aged MaturityTick through LatestPregnancyTick, without overlap.
+#
+	NumberOfFemalesToMakePregnant 									=	BirthRate * StartingPopulationSize
+	NumberOfFemalesToAvoidPregnancy 								=	( BirthRate - DeathRate ) * StartingPopulationSize * PregnancyDelayTicks
+	NumberOfPregnancyEligibleFemales 								=	0
+	for Age in range ( MaturityAge , MaxPregnantAge + 1 ) :
+		NumberOfPregnancyEligibleFemales 							=	NumberOfPregnancyEligibleFemales + NumFemalesByAge [ Age ]
+	while NumberOfFemalesToMakePregnant + NumberOfFemalesToAvoidPregnancy > NumberOfPregnancyEligibleFemales :
+		NumberOfFemalesToMakePregnant 								=	NumberOfFemalesToMakePregnant - 1
+		NumberOfFemalesToAvoidPregnancy 							=	NumberOfFemalesToAvoidPregnancy - 1
+	NumberOfFemalesToMakePregnantEachAge 							=	int ( NumberOfFemalesToMakePregnant / ( MaxPregnantAge - MaturityAge + 1 ) )
+	NumberOfFemalesToAvoidPregnancyEachAge							=	int ( NumberOfFemalesToAvoidPregnancy / ( MaxPregnantAge - MaturityAge + 1 ) )
+#
+	for Age in range ( 0 , MaximumAge + 1 ) :		
+		NumberOfFemalesPregnancyStatusAlteredThisAge 				=	0
+		for Agent in range ( 0 , NumFemalesByAge [ Age ] ) : # Create data for all females at this age.
+			PregnancyStatus 										=	0 # Default.
+			if MaturityAge <= Age <= MaxPregnantAge : # Set pregnancy status; first block for making pregnant, second block for avoiding pregnancy.
+				if NumberOfFemalesPregnancyStatusAlteredThisAge 	< NumberOfFemalesToMakePregnantEachAge :
+					PregnancyStatus 								=	1
+					NumberOfFemalesPregnancyStatusAlteredThisAge 	=	NumberOfFemalesPregnancyStatusAlteredThisAge + 1
+				elif NumberOfFemalesPregnancyStatusAlteredThisAge 	<	NumberOfFemalesToMakePregnantEachAge + NumberOfFemalesToAvoidPregnancyEachAge :
+					PregnancyStatus 								=	- PregnancyDelayTicks
+					NumberOfFemalesPregnancyStatusAlteredThisAge 	=	NumberOfFemalesPregnancyStatusAlteredThisAge + 1
+	return PregnancyStatus
+
+def GetRandomValueFromPDFSpec ( AgentID , ParameterIndex , GenderIndex , Age ) :
+#
+# This function returns a random value from the domain of the probability density function identified by the combination of Type , GenderIndex and Age.
+#
+	import	copy
+	import	random
+#
+	global	PDFSpec , MaximumAge , \
+			PrintFlow , TestSamplePrint , SampleAgentIDs
+#
+	HighestAgeIndex													=	len ( PDFSpec [ ParameterIndex ] [ GenderIndex + 3 ] )
+	ListOfFrequencies												=	list ( )
+	for AgeIndex in range ( 1 , HighestAgeIndex ) :
+		if AgeIndex == HighestAgeIndex - 1 :
+			HighComparator											=	MaximumAge + 1
+		else :
+			HighComparator											=	PDFSpec [ ParameterIndex ] [ GenderIndex + 3 ] [ AgeIndex ] [ 0 ] [ 1 ] + 1
+		if PDFSpec [ ParameterIndex ] [ GenderIndex + 3 ] [ AgeIndex ] [ 0 ] [ 0 ] <= Age < HighComparator : 
+			ListOfFrequencies										=	copy.deepcopy( PDFSpec [ ParameterIndex ] [ GenderIndex + 3 ] [ AgeIndex ] [ 1 ] )
+	SumOfFrequencies												=	0
+	for FrequencyIndex in range ( 0 , len ( ListOfFrequencies ) ) :
+		SumOfFrequencies											=	SumOfFrequencies + ListOfFrequencies [ FrequencyIndex ]
+	RandomSum														=	SumOfFrequencies * random.random ( )
+	SumOfFrequencies												=	0
+	for FrequencyIndex in range ( 0 , len ( ListOfFrequencies ) ) :
+		SumOfFrequencies											=	SumOfFrequencies + ListOfFrequencies [ FrequencyIndex ]
+		if SumOfFrequencies >= RandomSum :
+			ScaledValue												=	int ( round ( float ( PDFSpec [ ParameterIndex ] [ 2 ] [ 0 ] ) + \
+																			( float ( PDFSpec [ ParameterIndex ] [ 2 ] [ 1 ] ) - float ( PDFSpec [ ParameterIndex ] [ 2 ] [ 0 ] ) ) * \
+																			  float ( FrequencyIndex ) / float ( len ( ListOfFrequencies ) )		) )
+			return ScaledValue
+
+def	AssignAffinities ( ) :
+#
+# This function assigns Affinities to Agents and builds AgentGroups consisting of the Agents
+#	AffinitiesSpec is a list of tuples of the form:
+#		( Type , ( Strength , ( NumAffinesLo , NumAffinesHi ) , NumAffinityGroups , ( Group%ofPopLo , Group%ofPopHi ) , ( PropsensityLo, PropensityHi ) , ( LevelLo, LevelHi ) ) )
+#	Method:
+#		For each Agent, for each Type and Strength of Affinity, choose Affines (# between NumAffinesLo and NumAffinesHi) to selectd from each AffinityGroup (AffinityID = 
+#		Type + Strength + #) of size between Group%OfPopLo and Group%OfPopHi.
+#
+# PersonalUsage TopUp Algorithm (for use in AllocateRedistributeEnergyToAgents):
+#	For each Agent with deficient PersonalUsageAllocation, assemble list of Affines and their Affinity Bases to Agent; if duplicates, use strongest Affinity.
+#	Calculate total that could be contributed by these Affines, ie total of Propensities * Levels * PersonalStorage amounts over all Affines in this list.
+#	Calculate Required% of this amount required to meet Agent's PhysiologicalNeeds,
+#		Decrement all Affines by min(Required%,100%) * Propensities * Levels * PersonalStorage amounts,
+#		Increment needful Agent to PhysiologicalNeeds level.
+#
+	import	random
+	import	numpy
+	import	copy
+#
+	global	AgentData , AffinitiesSpec , AffinityGroupMembers , \
+			PrintFlow , TestSamplePrint
+#
+#	AffinitiesSpec is a list of tuples of the form:
+#		( Type , ( Strength , NumAffinityGroups , ( GroupSizeLo , GroupSizeHi ) , ( PropsensityLo, PropensityHi ) , ( LevelLo, LevelHi ) ) )
+#	Method:
+#		For each Type and Strength of Affinity, make NumAffinityGroups of size (range) sampled from population; assign unique AffnityID, Propensity (range) and Level (range).
+#		(-1 as NumAffinityGroups means determine NumAffinityGroups from population divided by size (range); otherwise take size (range) as % of population.)
+#
+#	AffinitiesSpec 				=	list( )
+#	AffinitiesSpec				=	[	( "PersonalRelationship" , 	"PR" , \
+#											( "Strong" 	, "Hi"	, -1 , 	( 1 , 10 ) , ( 0.7 , 1.0 ) , ( 0.3 , 0.5 ) ) , \
+#											( "Medium"	, "Md"	, -1 , 	( 2 , 10 ) , ( 0.5 , 0.7 ) , ( 0.1 , 0.3 ) ) , \
+#											( "Weak"	, "Lo"	, -1 , 	( 5 , 30 ) , ( 0.2 , 0.4 ) , ( 0.0 , 0.1 ) ) 	) , \
+#										( "CulturalBinding" , 		"CB", \
+#											( "Strong"	, "Hi"	, 2 , 	( 2 , 10 ) , ( 0.6 , 0.8 ) , ( 0.2 , 0.4 ) ) , \
+#											( "Medium"	, "Md"	, 5 , 	( 2 , 10 ) , ( 0.3 , 0.5 ) , ( 0.1 , 0.2 ) ) , \
+#											( "Weak"	, "Lo"	, 10 , 	( 2 , 10 ) , ( 0.1 , 0.2 ) , ( 0.0 , 0.1 ) )	) , \
+#										( "SharedPrinciple" , 		"SP" , \
+#									 		( "Strong"	, "Hi"	, 2 , 	( 5 , 10 ) , ( 0.5 , 0.6 ) , ( 0.2 , 0.3 ) ) , \
+#											( "Medium"	, "Md"	, 5 , 	( 5 , 10 ) , ( 0.1 , 0.2 ) , ( 0.0 , 0.1 ) ) , \
+#											( "Weak"	, "Lo"	, 10 , 	( 5 , 10 ) , ( 0.1 , 0.2 ) , ( 0.0 , 0.1 ) ) 	)	]
+#
+	AffinityGroupMembers					=	list ( )
+	AffinityID								=	-1
+	for SpecIndex in range ( 0 , len ( AffinitiesSpec ) ) :
+		for SubSpecIndex in range ( 2 , len ( AffinitiesSpec [ SpecIndex ] ) ) :
+			NumAffinityGroupsIndicator		=	AffinitiesSpec [ SpecIndex ] [ SubSpecIndex ] [ 2 ]
+			NumAffinityGroupsThisSpec		=	AffinitiesSpec [ SpecIndex ] [ SubSpecIndex ] [ 2 ]
+			if NumAffinityGroupsIndicator < 0 :
+				NumAgentsForNegCase			=	max ( AffinitiesSpec [ SpecIndex ] [ SubSpecIndex ] [ 3 ] [ 0 ] , AffinitiesSpec [ SpecIndex ] [ SubSpecIndex ] [ 3 ] [ 1 ] )
+				NumAffinityGroupsThisSpec	=	int ( round ( len ( AgentData ) / float ( NumAgentsForNegCase ) ) )
+#			print "           NumAffinityGroupsIndicator , NumAffinityGroupsThisSpec" , NumAffinityGroupsIndicator , NumAffinityGroupsThisSpec
+			for NewAffinityIndex in range ( 0 , NumAffinityGroupsThisSpec ) :
+				AffinityID					=	AffinityID + 1
+				AffinityLabel				=	AffinitiesSpec [ SpecIndex ] [ 1 ] + AffinitiesSpec [ SpecIndex ] [ SubSpecIndex ] [ 1 ] + str ( AffinityID )
+				if NumAffinityGroupsIndicator < 0 :
+					NumAgentsThisAffinity	=	random.randint ( AffinitiesSpec [ SpecIndex ] [ SubSpecIndex ] [ 3 ] [ 0 ] , AffinitiesSpec [ SpecIndex ] [ SubSpecIndex ] [ 3 ] [ 1 ] )
+				if NumAffinityGroupsIndicator >= 0 :
+					NumAgentsThisAffinity	=	int ( round ( float ( len ( AgentData ) / 100.0 * \
+												random.randint ( AffinitiesSpec [ SpecIndex ] [ SubSpecIndex ] [ 3 ] [ 0 ] , AffinitiesSpec [ SpecIndex ] [ SubSpecIndex ] [ 3 ] [ 1 ] ) ) ) )
+#				print "           NumAgentsThisAffinity" , AffinityLabel , NewAffinityIndex , NumAgentsThisAffinity
+				AgentsThisAffinity			=	numpy.random.random_integers ( 0 , len ( AgentData ) - 1 , NumAgentsThisAffinity )
+				PropensitiesThisAffinity	=	list ( )
+				PropensitiesThisAffinity	=	copy.deepcopy ( AffinitiesSpec [ SpecIndex ] [ SubSpecIndex ] [ 4 ] )
+				LevelsThisAffinity			=	list ( )
+				LevelsThisAffinity			=	copy.deepcopy ( AffinitiesSpec [ SpecIndex ] [ SubSpecIndex ] [ 5 ] )
+				AffinityGroupMembers		.   append ( ( AffinityLabel , AgentsThisAffinity , PropensitiesThisAffinity , LevelsThisAffinity ) )
+#
+				for AgentIndex in range ( 0 , len ( AgentsThisAffinity ) ) :
+					Agent					=	AgentsThisAffinity [ AgentIndex ]
+					AgentID					=	copy.deepcopy ( AgentData [ Agent ] [ 0 ] )
+					DemographicIdentity		=   copy.deepcopy ( AgentData [ Agent ] [ 1 ] )
+					Age						=	copy.deepcopy ( AgentData [ Agent ] [ 1 ] [ 0 ] )
+					Gender					=	copy.deepcopy ( AgentData [ Agent ] [ 1 ] [ 1 ] )
+					PregnancyStatus			=	copy.deepcopy ( AgentData [ Agent ] [ 1 ] [ 2 ] )
+					AffinitiesData			=	copy.deepcopy ( AgentData [ Agent ] [ 1 ] [ 3 ] )
+					ThoughtLeaderStatus		=	copy.deepcopy ( AgentData [ Agent ] [ 1 ] [ 4 ] )
+					WorldViewFilter			=	copy.deepcopy ( AgentData [ Agent ] [ 2 ] )
+					ActivationProfile		=	copy.deepcopy ( AgentData [ Agent ] [ 3 ] )
+					ClaimsData				=	copy.deepcopy ( AgentData [ Agent ] [ 4 ] )
+					AllocationsData			=	copy.deepcopy ( AgentData [ Agent ] [ 5 ] )
+					TransfersData			=	copy.deepcopy ( AgentData [ Agent ] [ 6 ] )
+					SatisfactionsData		=	copy.deepcopy ( AgentData [ Agent ] [ 7 ] )
+					TotalPersonalStorage	=	copy.deepcopy ( AgentData [ Agent ] [ 8 ] )
+#
+					AffinitiesData			.   append ( ( AffinityID ) )
+					DemographicIdentity		=	( Age , Gender , PregnancyStatus , AffinitiesData , ThoughtLeaderStatus )
+					AgentData				.   insert (	Agent , [ 	AgentID , DemographicIdentity , WorldViewFilter , ActivationProfile , \
+																		ClaimsData , AllocationsData , TransfersData , SatisfactionsData , TotalPersonalStorage ] )
+					AgentData				.   pop ( Agent + 1 )
+
+def RandomizeClaimsAndAllocationsOrder ( ) :
+#
+# This function randomizes Agent order within each power block. (Could convert to use PowerBlockData generated in CreateAgent.)
+# Claims will be made and allocated in this order, so Agents with higher Power will be more likely to have their Claims satisfied, though shuffled each Tick
+#
+	import	random
+	import	copy
+#
+	global	AgentData , \
+			PrintFlow , TestSamplePrint
+#
+	if PrintFlow : print "      RandomizeClaimsAllocationsOrder"
+#
+	for PowerIndex in range ( 0 , len ( PowerBlockData ) ) :
+		if PowerBlockData [ PowerIndex ] != [ ] :
+			StartAgentIndex 				=	PowerBlockData [ PowerIndex ] [ 0 ]
+			EndAgentIndex					=	PowerBlockData [ PowerIndex ] [ 1 ]
+#
+# Shuffle each Power block using the Fisher-Yates Algorithm (see http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle):
+#	To shuffle an array a of n elements (indices 0 to n-1)
+#	do for i from n-1 to 1
+#		j = random integer with 0 <= j <= i
+#		exchange a[j] and a[i]
+#
+			if EndAgentIndex > StartAgentIndex :
+				FirstShuffleIndex			=	EndAgentIndex
+				while FirstShuffleIndex >= StartAgentIndex + 1 :
+					FirstAgentToMove		=	list ( )
+					FirstAgentToMove		=	copy.deepcopy ( AgentData [ FirstShuffleIndex ] )
+					SecondShuffleIndex		=	random.randint ( StartAgentIndex , FirstShuffleIndex )
+					SecondAgentToMove		=	list ( )
+					SecondAgentToMove		=	copy.deepcopy ( AgentData [ SecondShuffleIndex ] )
+					AgentData				.   insert ( SecondShuffleIndex , FirstAgentToMove )
+					AgentData				.   pop ( SecondShuffleIndex + 1 )
+					AgentData 				.	insert ( FirstShuffleIndex , SecondAgentToMove )
+					AgentData				.   pop ( FirstShuffleIndex + 1 )
+					FirstShuffleIndex		=	FirstShuffleIndex - 1
+
+def GenerateHistory ( ) :
+#
+# This function generates a history of length MemoryTicks for each Agent, in the form of Claims , Allocations , Satisfactions , TotalPersonalStorage , and TransactionData.
+# It also establishes the initial value of CommunityStorage.
+# The 'distance' - sqrt(sum-of-squared-differences) - between the Agent's parameter set to that of the 'likely least consumptive' parameter set
+# is used to calculate the Agent's Claim (ratio of this distance to the distance between the 'likely least consumptive' paramter set and the 'likely most consumptive' parameter set).
+# In this period, Allocations are taken to be identical to Claims, and Satisfactions equal to 0.
+#
+	import	copy
+	import	random
+#
+	global	AgentData , EnergySupplySpec , EnergySupplyFactors , MemoryTicks , CommunityStorage , BaselineEnergies , FirstTickTotalEnergy , SampleAgentIDs , \
+			PDFSpec , MaturityAge , RetirementAge , MaximumAge , MaximumLikelyEnergyClaim , \
+			MostLikelyMaxEnergyConsumptiveParameterSet , MostToLeastDistance , \
+			PrintFlow , TestSamplePrint
+#
+	if PrintFlow : print "   GenerateHistory"
+#
+	BaselineEnergies									=	list ( )
+	FirstTickTotalEnergy								=	0
+	CommunityStorage									=	0
+#
+	MostToLeastDistance									=	0
+	for ParameterIndex in range ( 0 , len ( MostLikelyMaxEnergyConsumptiveParameterSet ) ) :
+		for PDFIndex in range ( 0 , len ( PDFSpec ) ) :
+			if	PDFSpec [ PDFIndex ] [ 0 ] == MostLikelyMaxEnergyConsumptiveParameterSet [ ParameterIndex ] [ 0 ] and \
+				PDFSpec [ PDFIndex ] [ 1 ] == MostLikelyMaxEnergyConsumptiveParameterSet [ ParameterIndex ] [ 1 ] :
+				MostToLeastDistance						=	MostToLeastDistance + \
+															( PDFSpec [ PDFIndex ] [ 2 ] [ 0 ] - PDFSpec [ PDFIndex ] [ 2 ] [ 1 ] ) ** 2
+	MostToLeastDistance									=	MostToLeastDistance ** 0.5
+#
+	for AgentIndex in range ( 0 , len ( AgentData ) ) :
+		AgentID											=	copy.deepcopy ( AgentData [ AgentIndex ] [ 0 ] )
+		DemographicIdentity								=	copy.deepcopy ( AgentData [ AgentIndex ] [ 1 ] )
+		Age												=	copy.deepcopy ( AgentData [ AgentIndex ] [ 1 ] [ 0 ] )
+		WorldViewFilter									=	copy.deepcopy ( AgentData [ AgentIndex ] [ 2 ] )
+		ActivationProfile								=	copy.deepcopy ( AgentData [ AgentIndex ] [ 3 ] )
+		ClaimsData										=	list ( )
+		AllocationsData									=	list ( )
+		TransfersData									=	list ( )
+		SatisfactionsData								=	list ( )
+		TotalPersonalStorage							=	0
+		ListOfAgentParameterTuples						=	list ( )
+		for ParameterIndex in range ( 0 , len ( WorldViewFilter ) ) :
+			ListOfAgentParameterTuples					.   append ( WorldViewFilter [ ParameterIndex ] )
+		for ParameterIndex in range ( 0 , len ( ActivationProfile ) ) :
+			ListOfAgentParameterTuples					.   append ( ActivationProfile [ ParameterIndex ] )
+#
+		AgentToLeastDistance								=	0
+		for TupleIndex in range ( 0 , len ( ListOfAgentParameterTuples ) ) :
+			AgentParameterValue								=	ListOfAgentParameterTuples [ TupleIndex ] [ 2 ]
+			for PDFIndex in range ( 0 , len ( PDFSpec ) ) :
+				if	ListOfAgentParameterTuples [ TupleIndex ] [ 0 ] == PDFSpec [ PDFIndex ] [ 0 ] and \
+					ListOfAgentParameterTuples [ TupleIndex ] [ 1 ] == PDFSpec [ PDFIndex ] [ 1 ] :
+					LeastIndex								=	0
+					if MostLikelyMaxEnergyConsumptiveParameterSet [ PDFIndex ] [ 2 ] == "Min" :
+						LeastIndex							=	1
+					AgentToLeastDistance					=	AgentToLeastDistance + \
+																( AgentParameterValue - PDFSpec [ PDFIndex ] [ 2 ] [ LeastIndex ] ) ** 2
+		AgentToLeastDistance								=	AgentToLeastDistance ** 0.5
+#
+		AllNeedsThisAgent								=	0
+		for WorldViewFilterIndex in range ( 0 , len ( WorldViewFilter ) ) :
+			if WorldViewFilter [ WorldViewFilterIndex ] [ 0 ] == "CoreNeed" :
+				AllNeedsThisAgent						=	AllNeedsThisAgent + WorldViewFilter [ WorldViewFilterIndex ] [ 2 ]
+				if WorldViewFilter [ WorldViewFilterIndex ] [ 1 ] == "Physiological" :
+					PhysiologicalNeedsThisAgent			=	WorldViewFilter [ WorldViewFilterIndex ] [ 2 ]
+			TotalClaimAndAllocationValueThisAgent		=	int ( round ( 	float ( AgentToLeastDistance ) / float ( MostToLeastDistance ) * \
+																			float ( MaximumLikelyEnergyClaim ) ) )
+		BaselineEnergies								.   append ( TotalClaimAndAllocationValueThisAgent )
+		FirstTickTotalEnergy							=	FirstTickTotalEnergy + TotalClaimAndAllocationValueThisAgent
+#
+		ContributionFactor								=	1
+		if Age < RetirementAge :
+			ContributionFactor							=	0
+		CommunityStorage								=	CommunityStorage + ContributionFactor * InitialCommunityStorageMultiple * TotalClaimAndAllocationValueThisAgent
+#
+		TotalDesireProfile								=	0.0
+		for ActivationProfileIndex in range ( 0 , len ( AgentData [ AgentIndex ] [ 3 ] ) ) :
+			if	AgentData [ AgentIndex ] [ 3 ] [ ActivationProfileIndex ] [ 0 ] == "Desire" and \
+				AgentData [ AgentIndex ] [ 3 ] [ ActivationProfileIndex ] [ 1 ] == "Degree of comfort of current lifestyle" :
+				PersonalUsageBase						=	float ( AgentData [ AgentIndex ] [ 3 ] [ ActivationProfileIndex ] [ 2 ] )
+				TotalDesireProfile						=	float ( TotalDesireProfile ) + float ( PersonalUsageBase )
+			if	AgentData [ AgentIndex ] [ 3 ] [ ActivationProfileIndex ] [ 0 ] == "Desire" and \
+				AgentData [ AgentIndex ] [ 3 ] [ ActivationProfileIndex ] [ 1 ] == "Degree of comfort in retirement" :
+				PersonalStorageBase						=	float ( AgentData [ AgentIndex ] [ 3 ] [ ActivationProfileIndex ] [ 2 ] )
+				TotalDesireProfile						=	float ( TotalDesireProfile ) + float ( PersonalStorageBase )
+			if	AgentData [ AgentIndex ] [ 3 ] [ ActivationProfileIndex ] [ 0 ] == "Desire" and \
+				AgentData [ AgentIndex ] [ 3 ] [ ActivationProfileIndex ] [ 1 ] == "Degree of community support in hard times" :
+				CommunityContributionBase				=	float ( AgentData [ AgentIndex ] [ 3 ] [ ActivationProfileIndex ] [ 2 ] )
+				TotalDesireProfile						=	float ( TotalDesireProfile ) + float ( CommunityContributionBase )
+#
+		for HistoryCount in range ( 0 , MemoryTicks ) :
+			ReverseHistoryCount							=	MemoryTicks - HistoryCount - 1
+			PersonalUsage								=	int ( round ( float ( TotalClaimAndAllocationValueThisAgent ) * float ( PersonalUsageBase )			/ \
+																															float ( TotalDesireProfile ) ) )
+			PersonalStorage								=	int ( round ( float ( TotalClaimAndAllocationValueThisAgent ) * float ( PersonalStorageBase )		/ \
+																															float ( TotalDesireProfile ) ) )
+			CommunityContribution						=	int ( round ( float ( TotalClaimAndAllocationValueThisAgent ) * float ( CommunityContributionBase ) / \
+																															float ( TotalDesireProfile ) ) )
+			if Age - ReverseHistoryCount < RetirementAge :
+				ClaimsData								.   append ( ( TotalClaimAndAllocationValueThisAgent , PersonalUsage , PersonalStorage , CommunityContribution ) )
+				AllocationsData							.   append ( ( TotalClaimAndAllocationValueThisAgent , PersonalUsage , PersonalStorage , CommunityContribution ) )
+				TransfersData							.   append ( ( 0 , 0 , 0 , 0 , 0 ) )
+			else :
+				ClaimsData								.   append ( ( PersonalUsage , PersonalUsage , 0 , 0 ) )
+				AllocationsData							.   append ( ( 0 , 0 , 0 , 0 ) )
+				TransfersData							.   append ( ( PersonalUsage , PersonalUsage , 0 , 0 ) ) # ToPersonalUsage, FromPersonalStorage, FromCommunity, FromAffines, ToAffines.
+			SatisfactionsData							.   append ( ( 0 ) )
+#
+		if Age < RetirementAge :
+			TotalPersonalStorage						=	int ( round ( ( MaximumAge + 1 - RetirementAge ) * PersonalUsage * float ( Age ) / float ( RetirementAge ) ) )
+		else :
+			TotalPersonalStorage						=	int ( round ( ( MaximumAge + 1 - Age ) * PersonalUsage ) )
+#
+		AgentData										.   insert ( AgentIndex , [	AgentID , DemographicIdentity , WorldViewFilter , ActivationProfile , \
+																					ClaimsData , AllocationsData , TransfersData , SatisfactionsData , TotalPersonalStorage ] )
+		AgentData										.   pop ( AgentIndex + 1 )
+#
+	print "      BaselineEnergies:" , BaselineEnergies
+	if TestSamplePrint : ShowTestSample ( "EndGenerateHistory" )
+
+def ClaimEnergy ( ) :
+#
+# This function calculates current-Tick Agents' Claims, in the order determined by RandomizeClaimsAndAllocationsOrder (can change each SimulationTick).
+#
+	import	random
+	import	copy
+#
+	global	SimulationTick , AgentData , RetirementAge , BaselineEnergies , FirstTickTotalEnergy , EnergySupplyFactors , CommunityStorage , \
+			PrintFlow , TestSamplePrint
+#
+	if PrintFlow :
+		print "      AgentsMakeClaims"
+#
+	for AgentIndex in range ( 0 , len ( AgentData ) ) :
+		AgentID												=	copy.deepcopy ( AgentData [ AgentIndex ] [ 0 ] )
+		DemographicIdentity									=	copy.deepcopy ( AgentData [ AgentIndex ] [ 1 ] )
+		Age													=	copy.deepcopy ( DemographicIdentity [ 0 ] )
+		WorldViewFilter										=	copy.deepcopy ( AgentData [ AgentIndex ] [ 2 ] )
+		ActivationProfile									=	copy.deepcopy ( AgentData [ AgentIndex ] [ 3 ] )
+		ClaimsData											=	copy.deepcopy ( AgentData [ AgentIndex ] [ 4 ] )
+		AllocationsData										=	copy.deepcopy ( AgentData [ AgentIndex ] [ 5 ] )
+		TransfersData										=	copy.deepcopy ( AgentData [ AgentIndex ] [ 6 ] )
+		SatisfactionsData									=	copy.deepcopy ( AgentData [ AgentIndex ] [ 7 ] )
+		TotalPersonalStorage								=	copy.deepcopy ( AgentData [ AgentIndex ] [ 8 ] )
+
+		ListOfAgentParameterTuples							=	GetListOfAgentParameterTuples ( AgentIndex )
+		AgentToLeastDistance								=	CalculateAgentToLeastDistance ( ListOfAgentParameterTuples )
+#
+		TotalDesireProfile									=	0.0
+		for ActivationProfileIndex in range ( 0 , len ( AgentData [ AgentIndex ] [ 3 ] ) ) :
+			if	AgentData [ AgentIndex ] [ 3 ] [ ActivationProfileIndex ] [ 0 ] == "Desire" and \
+				AgentData [ AgentIndex ] [ 3 ] [ ActivationProfileIndex ] [ 1 ] == "Degree of comfort of current lifestyle" :
+				PersonalUsageBase							=	float ( AgentData [ AgentIndex ] [ 3 ] [ ActivationProfileIndex ] [ 2 ] )
+				TotalDesireProfile							=	float ( TotalDesireProfile ) + float ( PersonalUsageBase )
+			if	AgentData [ AgentIndex ] [ 3 ] [ ActivationProfileIndex ] [ 0 ] == "Desire" and \
+				AgentData [ AgentIndex ] [ 3 ] [ ActivationProfileIndex ] [ 1 ] == "Degree of comfort in retirement" :
+				PersonalStorageBase							=	float ( AgentData [ AgentIndex ] [ 3 ] [ ActivationProfileIndex ] [ 2 ] )
+				TotalDesireProfile							=	float ( TotalDesireProfile ) + float ( PersonalStorageBase )
+			if	AgentData [ AgentIndex ] [ 3 ] [ ActivationProfileIndex ] [ 0 ] == "Desire" and \
+				AgentData [ AgentIndex ] [ 3 ] [ ActivationProfileIndex ] [ 1 ] == "Degree of community support in hard times" :
+				CommunityContributionBase					=	float ( AgentData [ AgentIndex ] [ 3 ] [ ActivationProfileIndex ] [ 2 ] )
+				TotalDesireProfile							=	float ( TotalDesireProfile ) + float ( CommunityContributionBase )
+#
+		TickEnergyThisAgent									=	int ( round ( BaselineEnergies [ AgentIndex ] ) )
+		PersonalUsageClaim									=	int ( round ( float ( TickEnergyThisAgent ) * float ( PersonalUsageBase )			/ float ( TotalDesireProfile ) ) )
+		PersonalStorageClaim								=	int ( round ( float ( TickEnergyThisAgent ) * float ( PersonalStorageBase )			/ float ( TotalDesireProfile ) ) )
+		CommunityContributionClaim							=	int ( round ( float ( TickEnergyThisAgent ) * float ( CommunityContributionBase )	/ float ( TotalDesireProfile ) ) )
+		TotalClaim											=	int ( PersonalUsageClaim + PersonalStorageClaim + CommunityContributionClaim )
+		if Age >= RetirementAge :
+			TotalClaim										=	PersonalUsageClaim # To force Allocation from PersonalStorage.
+			PersonalStorageClaim							=	0
+			CommunityContributionClaim						=	0
+		ClaimsData											.   pop ( 0 )
+		ClaimsData											.   append ( ( TotalClaim , PersonalUsageClaim , PersonalStorageClaim , CommunityContributionClaim ) )
+#
+		AgentData											.   insert ( AgentIndex , [	AgentID , DemographicIdentity , WorldViewFilter , ActivationProfile , \
+																						ClaimsData , AllocationsData , TransfersData , SatisfactionsData , TotalPersonalStorage ] )
+		AgentData											.   pop ( AgentIndex + 1 )
+#
+	if TestSamplePrint : ShowTestSample ( "AgentClaimsComplete" )
+
+def AllocateAndTransferEnergy ( ) :
+#
+# This function allocates the available energy to Agents, in Power block order, randomized within Power block every SimTick.
+# Deficient Allocations will be topped up from PersonalStorage and CommunityStorage to meet PersonalUsageClaims, and from Affines to meet PhysiologicalNeeds.
+#
+	import	copy
+	import	random
+# 
+	global	SimulationTick , AgentData , RetirementAge , MemoryTicks , BaselineEnergies , FirstTickTotalEnergy , EnergySupplyFactors , FirstMessageThisTick , \
+			CommunityStorage , CommunityStorageDiversionFactor , MaxCommunityStorageDepletionRate , AffinityGroupMembers , \
+			PrintFlow , TestSamplePrint
+#
+	if PrintFlow : print "      AllocateEnergyToAgents"
+#
+	L1DeficientPersonalUsageList							=	list ( )
+	L2DeficientPersonalUsageList							=	list ( )
+	L3DeficientPresonalUsageList							=	list ( )
+#
+	for Agent in range ( 0 , len ( AgentData ) ) :
+		AgentID												=	copy.deepcopy ( AgentData [ Agent ] [ 0 ] )
+		DemographicIdentity									=	copy.deepcopy ( AgentData [ Agent ] [ 1 ] )
+		Age													=	copy.deepcopy ( AgentData [ Agent ] [ 1 ] [ 0 ] )
+		WorldViewFilter										=	copy.deepcopy ( AgentData [ Agent ] [ 2 ] )
+		ActivationProfile									=	copy.deepcopy ( AgentData [ Agent ] [ 3 ] )
+		ClaimsData											=	copy.deepcopy ( AgentData [ Agent ] [ 4 ] )
+		AllocationsData										=	copy.deepcopy ( AgentData [ Agent ] [ 5 ] )
+		TransfersData										=	copy.deepcopy ( AgentData [ Agent ] [ 6 ] )
+		SatisfactionsData									=	copy.deepcopy ( AgentData [ Agent ] [ 7 ] )
+		TotalPersonalStorage								=	copy.deepcopy ( AgentData [ Agent ] [ 8 ] )
+#
+		EnergyAvailableToBeAllocatedThisTick				=	int ( float ( FirstTickTotalEnergy ) * float ( EnergySupplyFactors [ SimulationTick ] ) )
+		if Age >= RetirementAge :
+			EnergyAvailableToBeAllocatedThisTick			=	0
+		TotalAllocationsThisAgent							=	0
+#
+		PersonalUsageClaim									=	ClaimsData [ len ( ClaimsData ) - 1 ] [ 1 ]
+		if PersonalUsageClaim <= EnergyAvailableToBeAllocatedThisTick : # Fulfill full PersonalUsageClaim for this Agent.
+			PersonalUsageAllocation							=	PersonalUsageClaim
+			EnergyAvailableToBeAllocatedThisTick	 		=	EnergyAvailableToBeAllocatedThisTick - PersonalUsageAllocation
+		else : # EnergyAvailable will be exhausted with this Allocation.
+			PersonalUsageAllocation			 				=	EnergyAvailableToBeAllocatedThisTick
+			EnergyAvailableToBeAllocatedThisTick			=	0
+			L1DeficientPersonalUsageList					.	append ( ( Agent , PersonalUsageClaim - PersonalUsageAllocation ) )
+		TotalAllocationsThisAgent							=	TotalAllocationsThisAgent + PersonalUsageAllocation
+#
+		ContributionClaim									=	ClaimsData [ len ( ClaimsData ) - 1 ] [ 3 ]
+		if ContributionClaim <= EnergyAvailableToBeAllocatedThisTick : # FulFill full CommunityStorage Claim for this Agent.
+			ContributionAllocation						 	=	ContributionClaim
+			EnergyAvailableToBeAllocatedThisTick			=	EnergyAvailableToBeAllocatedThisTick - ContributionAllocation
+		else : # EnergyAvailable will be exhausted with this Allocation.
+			ContributionAllocation				 			=	EnergyAvailableToBeAllocatedThisTick
+			EnergyAvailableToBeAllocatedThisTick			=	0
+		TotalAllocationsThisAgent							=	TotalAllocationsThisAgent			+ ContributionAllocation
+#
+		PersonalStorageAllocation							=	EnergyAvailableToBeAllocatedThisTick
+#
+		AllocationsData										.   pop ( 0 )
+		AllocationsData										.	append ( ( 	TotalAllocationsThisAgent , PersonalUsageAllocation , \
+																			PersonalStorageAllocation , ContributionAllocation ) )
+		TotalPersonalStorage								=	TotalPersonalStorage + PersonalStorageAllocation
+#
+		AgentData											. 	insert( Agent , [ 	AgentID	, DemographicIdentity , WorldViewFilter , ActivationProfile , \
+																					ClaimsData , AllocationsData , TransfersData , SatisfactionsData , TotalPersonalStorage ] )
+		AgentData											.	pop ( Agent + 1 )
+#
+	if TestSamplePrint : ShowTestSample ( "AllocationsComplete, TransfersBegin" )
+#
+# TopUp Energy of Agents in L1DeficientPersonalStorageList from PersonalStorage (current Power order) to ensure Physiological Needs are met as much as possible.
+#
+	for DeficientIndex in range ( 0 , len ( L1DeficientPersonalUsageList ) ) :
+		Agent												=	L1DeficientPersonalUsageList [ DeficientIndex ] [ 0 ]
+		AgentID												=	copy.deepcopy ( AgentData [ Agent ] [ 0 ] )
+		DemographicIdentity									=	copy.deepcopy ( AgentData [ Agent ] [ 1 ] )
+		WorldViewFilter										=	copy.deepcopy ( AgentData [ Agent ] [ 2 ] )
+		ActivationProfile									=	copy.deepcopy ( AgentData [ Agent ] [ 3 ] )
+		ClaimsData											=	copy.deepcopy ( AgentData [ Agent ] [ 4 ] )
+		AllocationsData										=	copy.deepcopy ( AgentData [ Agent ] [ 5 ] )
+		TransfersData										=	copy.deepcopy ( AgentData [ Agent ] [ 6 ] )
+		SatisfactionsData									=	copy.deepcopy ( AgentData [ Agent ] [ 7 ] )
+		TotalPersonalStorage								=	copy.deepcopy ( AgentData [ Agent ] [ 8 ] )
+#
+		TransferToPersonalUsage								=	0
+		TransferFromPersonalStorage							=	0
+		TransferFromCommunityStorage						=	0
+		TransferFromAffines									=	0
+		TransferToAffines									=	0
+#
+		PersonalUsageDeficiency								=	L1DeficientPersonalUsageList [ DeficientIndex ] [ 1 ]
+		if PersonalUsageDeficiency <= TotalPersonalStorage :
+			TransferToPersonalUsage							=	PersonalUsageDeficiency
+			TransferFromTotalPersonalStorage				=	TransferToPersonalUsage
+			TotalPersonalStorage							=	TotalPersonalStorage				-	TransferFromTotalPersonalStorage
+			PersonalUsageDeficiency							=	0
+		else :
+			TransferToPersonalUsage							=	TotalPersonalStorage
+			TransferFromTotalPersonalStorage				=	TransferToPersonalUsage
+			TotalPersonalStorage							=	0
+			PersonalUsageDeficiency							=	PersonalUsageDeficiency				-	TransferToPersonalUsage
+			L2DeficientPersonalUsageList					.	append ( ( AgentIndex , PersonalUsageDeficiency ) )
+#
+		ReplacementTransfersData							=	(	TransferToPersonalUsage , TransferFromTotalPersonalStorage , TransferFromCommunityStorage , \
+			 														TransferFromAffines, TransferToAffines )
+		TransfersData										.	pop ( len ( TransfersData ) - 1 )
+		TransfersData										.	append ( ReplacementTransfersData )
+		AgentData											.	insert ( Agent ,	[ AgentID	, DemographicIdentity , WorldViewFilter , ActivationProfile , \
+																					ClaimsData , AllocationsData , TransfersData , SatisfactionsData , TotalPersonalStorage ] )
+		AgentData											.	pop ( Agent + 1 )
+#
+# TopUp Energy of Agents in L2DeficientPersonalStorageList from CommunityStorage (reverse Power order) to ensure Physiological Needs are met as much as possible.
+#
+	for DeficientIndex in range ( 0 , len ( L2DeficientPersonalUsageList ) ) :
+		ReverseDeficientIndex								=	len ( L2DeficientPersonalUsageList ) - 1 - DeficientIndex
+		Agent												=	L2DeficientPersonalUsageList [ ReverseDeficientIndex ] [ 0 ]
+		AgentID												=	copy.deepcopy ( AgentData [ Agent ] [ 0 ] )
+		DemographicIdentity									=	copy.deepcopy ( AgentData [ Agent ] [ 1 ] )
+		WorldViewFilter										=	copy.deepcopy ( AgentData [ Agent ] [ 2 ] )
+		ActivationProfile									=	copy.deepcopy ( AgentData [ Agent ] [ 3 ] )
+		ClaimsData											=	copy.deepcopy ( AgentData [ Agent ] [ 4 ] )
+		AllocationsData										=	copy.deepcopy ( AgentData [ Agent ] [ 5 ] )
+		TransfersData										=	copy.deepcopy ( AgentData [ Agent ] [ 6 ] )
+		TransferToPersonalUsage								=	copy.deepcopy ( AgentData [ Agent ] [ 6 ] [ 0 ] )
+		TransferFromPersonalStorage							=	copy.deepcopy ( AgentData [ Agent ] [ 6 ] [ 1 ] )
+		TransferFromCommunityStorage						=	copy.deepcopy ( AgentData [ Agent ] [ 6 ] [ 2 ] )
+		TransferFromAffines									=	copy.deepcopy ( AgentData [ Agent ] [ 6 ] [ 3 ] )
+		TransferToAffines									=	copy.deepcopy ( AgentData [ Agent ] [ 6 ] [ 4 ] )
+		SatisfactionsData									=	copy.deepcopy ( AgentData [ Agent ] [ 7 ] )
+		TotalPersonalStorage								=	copy.deepcopy ( AgentData [ Agent ] [ 8 ] )
+#
+		PersonalUsageDeficiency								=	L2DeficientPersonalUsageList [ DeficientIndex ] [ 1 ]
+		MaxAvailableFromCommunityStorage					=	CommunityStorage * MaxCommunityStorageDepletionRate
+		if PersonalUsageDeficiency <= MaxAvailableFromCommunityStorage :
+			TransferToPersonalUsage							=	TransferToPersonalUsage				+	PersonalUsageDeficiency
+			TransferFromCommunityStorage					=	PersonalUsageDeficiency
+			CommunityStorage								=	CommunityStorage					-	TransferFromCommunityStorage
+			PersonalUsageDeficiency							=	0
+		else :
+			TransferToPersonalUsage							=	int ( round ( MaxAvailableFromCommunityStorage ) )
+			TransferFromCommunityStorage					=	TransferToPersonalUsage
+			PersonalUsageDeficiency							=	PersonalUsageDeficiency				-	TransferFromCommunityStorage
+			CommunityStorage								=	CommunityStorage					-	TransferToPersonalUsage
+			L3DeficientPresonalUsageList					.	append ( ( AgentIndex , PersonalUsageDeficiency ) )
+#
+		ReplacementTransfersData							=	(	TransferToPersonalUsage , TransferFromTotalPersonalStorage , TransferFromCommunity , \
+			 														TransferFromAffines, TransferToAffines )
+		TransfersData										.	pop ( len ( TransfersData ) - 1 )
+		TransfersData										.	append ( ReplacementTransfersData )
+		AgentData											.	insert ( Agent ,	[ AgentID	, DemographicIdentity , WorldViewFilter , ActivationProfile , \
+																					ClaimsData , AllocationsData , TransfersData , SatisfactionsData , TotalPersonalStorage ] )
+		AgentData											.	pop ( Agent + 1 )
+#
+# TopUp Energy of Agents in L3DeficientPersonalUsageList from Affine's PersonalStorage to ensure PhysiologicalNeeds are met as much as possible.
+#
+	for DeficientIndex in range ( 0 , len ( L3DeficientPresonalUsageList ) ) :
+		AgentID												=	copy.deepcopy ( AgentData [ Agent ] [ 0 ] )
+		DemographicIdentity									=	copy.deepcopy ( AgentData [ Agent ] [ 1 ] )
+		AffinitiesData										=	copy.deepcopy ( AgentData [ Agent ] [ 1 ] [ 3 ] )
+		WorldViewFilter										=	copy.deepcopy ( AgentData [ Agent ] [ 2 ] )
+		ActivationProfile									=	copy.deepcopy ( AgentData [ Agent ] [ 3 ] )
+		ClaimsData											=	copy.deepcopy ( AgentData [ Agent ] [ 4 ] )
+		AllocationsData										=	copy.deepcopy ( AgentData [ Agent ] [ 5 ] )
+		TransfersData										=	copy.deepcopy ( AgentData [ Agent ] [ 6 ] )
+		TransferToPersonalUsage								=	copy.deepcopy ( AgentData [ Agent ] [ 6 ] [ 0 ] )
+		TransferFromPersonalStorage							=	copy.deepcopy ( AgentData [ Agent ] [ 6 ] [ 1 ] )
+		TransferFromCommunityStorage						=	copy.deepcopy ( AgentData [ Agent ] [ 6 ] [ 2 ] )
+		TransferFromAffines									=	copy.deepcopy ( AgentData [ Agent ] [ 6 ] [ 3 ] )
+		TransferToAffines									=	copy.deepcopy ( AgentData [ Agent ] [ 6 ] [ 4 ] )
+		SatisfactionsData									=	copy.deepcopy ( AgentData [ Agent ] [ 7 ] )
+		TotalPersonalStorage								=	copy.deepcopy ( AgentData [ Agent ] [ 8 ] )
+
+		PersonalUsageDeficiency								=	L3DeficientPresonalUsageList [ DeficientIndex ] [ 1 ]
+#
+# Obtain energy from Affines in an equitable manner (reflecting their Storage and Power levels) to a level not exceeding the least amount left to them.
+# AffinityGroupMembers consists of tuples of the form ( AffinityLabel , AgentsThisAffinity , PropensitiesThisAffinity , LevelsThisAffinity ) )
+#
+		AffinesPotentialContribution						=	0
+		Contributions										=	list ( )
+		for AffinityDataIndex in range ( 0 , len ( AffinitiesData ) ) :
+			AffinityGroupIndex								=	AffinitiesData [ AffinityDataIndex ]
+			MinPropensityThisGroup							=	AffinityGroupMembers [ AffinityGroupIndex ] [ 2 ] [ 0 ]
+			MaxPropensityThisGroup							=	AffinityGroupMembers [ AffinityGroupIndex ] [ 2 ] [ 1 ]
+			PropensityThisGroup								=	int ( round ( float ( MinPropensityThisGroup ) + random.random ( ) * float ( MaxPropensityThisGroup - MinPropensityThisGroup ) ) )
+			MinLevelThisGroup								=	AffinityGroupMembers [ AffinityGroupIndex ] [ 3 ] [ 0 ]
+			MaxLevelThisGroup								=	AffinityGroupMembers [ AffinityGroupIndex ] [ 3 ] [ 1 ]
+			LevelThisGroup									=	int ( round ( float ( MinPropensityThisGroup ) + random.random ( ) * float ( MaxPropensityThisGroup - MinPropensityThisGroup ) ) )
+			for AgentIndex in range ( 0 , len ( AffinityGroupMembers [ AffinityGroup ] [ 1 ] ) ) :
+				ContributorID								=	AffinityGroupMembers [ AffinityGroupIndex ] [ 1 ] [ AgentIndex ]
+				ContributorIndex							=	FindAgentFromAgentID ( ContributorID )
+				ContributionPotentialThisAgent				=	AgentData [ ContributorIndex ] [ 7 ] * PropensityThisGroup * LevelThisGroup
+				AffinesPotentialContribution				=	int ( round ( float ( AffinesPotentialContribution ) + float ( ContributionPotentialThisAgent ) ) )
+				Contributions								.   append ( ( ContributorIndex , ContributionPotentialThisAgent ) )
+		if AffinesPotentialContribution > PersonalUsageDeficiency :
+			TransferToPersonalUsage							=	TransferToPersonalUsage + PersonalUsageDeficiency
+			TransferFromAffines								=	AffinesPotentialContribution
+			TransfersData									.	pop ( len ( TransfersData ) - 1 )
+			ReplacementTransfersData						=	(	TransferToPersonalUsage , TransferFromTotalPersonalStorage , TransferFromCommunity , \
+			 														TransferFromAffines, TransferToAffines )
+			TransfersData									.	append ( ReplacementAllocationsData )
+			AgentData										.	insert ( Agent , [	AgentID	, DemographicIdentity , WorldViewFilter , ActivationProfile , \
+																					ClaimsData , AllocationsData , TransfersData , SatisfactionsData , TotalPersonalStorage ] )
+			AgentData										.	pop ( Agent + 1 )
+#
+			for ContributionIndex in range ( 0 , len ( Contributions ) ) :
+				AgentID										=	copy.deepcopy ( AgentData [ ContributionIndex ] [ 0 ] )
+				DemographicIdentity							=	copy.deepcopy ( AgentData [ ContributionIndex ] [ 1 ] )
+				WorldViewFilter								=	copy.deepcopy ( AgentData [ ContributionIndex ] [ 2 ] )
+				ActivationProfile							=	copy.deepcopy ( AgentData [ ContributionIndex ] [ 3 ] )
+				ClaimsData									=	copy.deepcopy ( AgentData [ ContributionIndex ] [ 4 ] )
+				AllocationsData								=	copy.deepcopy ( AgentData [ ContributionIndex ] [ 5 ] )
+				TransfersData								=	copy.deepcopy ( AgentData [ ContributionIndex ] [ 6 ] )
+				SatisfactionData							=	copy.deepcopy ( AgentData [ ContributionIndex ] [ 7 ] )
+				TotalPersonalStorage						=	copy.deepcopy ( AgentData [ ContributionIndex ] [ 8 ] )
+				TotalPersonaStorage							=	int ( float ( TotalPersonaStorage ) - float ( Contributions [ ContributionIndex ] [ 1 ] ) )
+				AgentData									.   insert ( ContributionIndex , [	AgentID	, DemographicIdentity , WorldViewFilter , ActivationProfile , \
+																								ClaimsData , AllocationsData , TransfersData , SatisfactionsData , TotalPersonalStorage ] )
+				AgentData									.   pop ( ContributionIndex + 1 )
+#
+	FirstMessageThisTick 									=	list ( ) # Forcing all Agents to express SatisfactionValue prior to consulting Affines.
+	for Agent in range ( 0 , len ( AgentData ) ) :
+		FirstMessageThisTick								.	append ( True )
+#
+	if TestSamplePrint : ShowTestSample ( "Allocations/TransfersComplete" )
+
+def DiscussWithAffines ( ) :
+#
+# This function produces an Affines-affected value for each Agent's Allocation vs Claim satisfaction in this SimTick.
+#
+	import	random
+	import	copy
+#
+	global	AgentData , Agent , SimulationTick , MemoryTicks , FirstMessageThisTick , ThresholdViolationAllowanceLow , ThresholdViolationAllowanceHigh , ThresholdViolationAllowanceThisTick , \
+			MaxMessagesPerTickPerAgent , InBox , BatchAssessment , AffinityGroupMembers , \
+			PrintFlow , TestSamplePrint
+#
+	if PrintFlow : print "      InterAgentDiscussions"
+#
+	MaxMessagesThisTick									=	MaxMessagesPerTickPerAgent * len ( AgentData )
+	NumMessagesThisTick 								=	0
+	ThresholdViolationAllowanceThisTick					=	float ( ThresholdViolationAllowanceLow ) + random.random ( ) * \
+															( float ( ThresholdViolationAllowanceHigh ) - float ( ThresholdViolationAllowanceLow ) )
+	InBox												=	list ( )
+#
+	while NumMessagesThisTick <= MaxMessagesThisTick :
+		for Agent in range ( 0 , len ( AgentData ) ) :
+			AgentID										=	copy.deepcopy ( AgentData [ Agent ] [ 0 ] )
+			DemographicIdentity							=	copy.deepcopy ( AgentData [ Agent ] [ 1 ] )
+			AffinityData								=	copy.deepcopy ( AgentData [ Agent ] [ 1 ] [ 3 ] )
+			WorldViewFilter								=	copy.deepcopy ( AgentData [ Agent ] [ 2 ] )
+			ActivationProfile							=	copy.deepcopy ( AgentData [ Agent ] [ 3 ] )
+			ClaimsData									=	copy.deepcopy ( AgentData [ Agent ] [ 4 ] )
+			AllocationsData								=	copy.deepcopy ( AgentData [ Agent ] [ 5 ] )
+			TransfersData								=	copy.deepcopy ( AgentData [ Agent ] [ 6 ] )
+			SatisfactionsData							=	copy.deepcopy ( AgentData [ Agent ] [ 7 ] )
+			TotalPersonalStorage						=	copy.deepcopy ( AgentData [ Agent ] [ 8 ] )
+#
+			if FirstMessageThisTick [ Agent ] :
+				FirstMessageThisTick					.	insert ( Agent , False )
+				FirstMessageThisTick					.	pop ( Agent + 1 )
+				DifferenceClaimAllocation		 		=	float ( AllocationsData [ len ( AllocationsData ) - 1 ] [ 0 ] ) - float ( ClaimsData [ len ( ClaimsData ) - 1 ] [ 0 ] )
+				Sign									=	+1.0
+				if DifferenceClaimAllocation < 0 :
+					Sign								=	-1.0
+				if Sign * DifferenceClaimAllocation <= float ( ThresholdViolationAllowanceThisTick ) :
+					AgentSatisfactionValue				=	0.0
+				else :
+					AgentSatisfactionValue				=	float ( DifferenceClaimAllocation )
+				SatisfactionsData						.   pop ( 0 )
+				SatisfactionsData						.   append ( ( int ( AgentSatisfactionValue ) ) )
+# Incorporate Affines' 'opinions', conditioned by BelongingnessEffect.
+			else :
+				BelongingnessEffect						=	0.0
+				for WorldViewIndex in range ( 0 , len ( WorldViewFilter ) ) :
+					if WorldViewFilter [ WorldViewIndex ] [ 0 ] == "Bias" and WorldViewFilter [ WorldViewIndex ] [ 1 ] == "Belongingness Effect" :
+						BelongingnessEffect				=	WorldViewFilter [ WorldViewIndex ] [ 3 ]
+				ConditionedBatchAssessment				=	EvaluateNextBatchOfAffineMessages ( Agent ) * BelongingnessEffect
+				ModifiedSatisfactionValue		 		=	AgentData [ Agent ] [ 6 ] [ len ( SatisfactionsData ) - 1 ] + ContitionedBatchAssessment
+# Update SatisfactionsData and AgentData.
+				SatisfactionsData						.	pop ( len ( SatisfactionsData ) - 1 )
+				SatisfactionsData						.	append ( ( int ( ModifiedSatisfactionValue ) ) )
+			AgentData									.	insert ( Agent , \
+															[ 	AgentID , DemographicIdentity , WorldViewFilter , ActivationProfile , \
+																ClaimsData , AllocationsData , TransfersData , SatisfactionsData , TotalPersonalStorage ] )
+			AgentData									.	pop ( Agent + 1 )
+# Send messages to Affines.
+			for AffinityGroupIndex in range ( 0 , len ( AffinityData ) ) :
+				for RecipientAgentID in range ( 0 , len ( AffinityGroupMembers [ AffinityGroupIndex ] ) ) :
+					if RecipientAgentID != AgentID :
+						InBox				 			.	append ( ( RecipientAgentID , AgentID , AgentData [ Agent ] [ 6 ] [ len ( SatisfactionsData ) - 1 ] ) )
+						NumMessagesThisTick 			=	NumMessagesThisTick + 1
+#
+	if TestSamplePrint : ShowTestSample ( "DiscussionsComplete" )
+
+def EvaluateNextBatchOfAffineMessages ( Agent ) :
+#
+# This function processes messages sent to Agent (from InterAgentDiscussions, above), with 'time' limits. i.e. MaxMessagesPerBatch; unprocessed messages remain in InBox.
+#
+	import	random
+	import	copy
+#
+	global 	AgentData , MaxMessagesPerBatch , MaxMessagesPerTickPerAgent , InBox , BatchAssessment , \
+			PrintFlow , TestSamplePrint
+#
+	if PrintFlow :  print "         NextBatch:" , Agent , AgentData [ Agent ] [ 0 ]
+#
+	BatchAssessment 									=	0
+	NumMessagesProcessedThisAgentThisBatch				=	0
+	LenInBox											=	len ( InBox )
+	while InBox != [ ] and NumMessagesProcessedThisAgentThisBatch <= MaxMessagesPerTickPerAgent :
+		MessageIndex									=	0
+		if InBox [ MessageIndex ] [ 0 ] == AgentData [ Agent ] [ 0 ] :
+			Message										=	copy.deepcopy ( InBox [ MessageIndex ] )
+			InBox										.	pop ( MessageIndex )
+			SenderAgentID								=	Message [ 1 ]
+			SenderSatisfactionValue 					= 	float ( Message [ 2 ] )
+			HaloEffect	 								=	1.0
+			if AgentData [ FindAgentFromAgentID ( SenderAgentID ) ] [ 1 ] [ 4 ] : # Sender is a ThoughtLeader.
+				for WorldViewIndex in range ( 0 , len ( WorldViewFilter ) ) :
+					if WorldViewFilter [ WorldViewIndex ] [ 0 ] == "Bias" and WorldViewFilter [ WorldViewIndex ] [ 1 ] == "HaloEffect" :
+						HaloEffect						=	WorldViewFilter [ WorldViewIndex ] [ 3 ]
+						BatchAssessment 				=	float ( BatchAssessment ) + float ( SenderSatisfactionValue ) * float ( HaloEffect )
+			NumMessagesProcessedThisAgentThisBatch		=	NumMessagesProcessedThisAgentThisBatch + 1
+		MessageIndex									=	MessageIndex + 1
+#
+	if NumMessagesProcessedThisAgentThisBatch == 0 :
+		return 0.0
+	else :
+		return float ( BatchAssessment ) / float ( NumMessagesProcessedThisAgentThisBatch )
+
+def AssessAdjustActivationProfiles ( ) :
+#
+# This function assesses Agents' Satisfaction situation and adjusts Agent parameters to generate Claims in line with recent Allocations.
+# Base on
+#	Hardship/ProsperityIndicator
+#	RiskAvoidanceEffectValue
+# Algorithm
+#	If prosperous:
+#		If not risk averse, convert sufficient PersonalStorage to raise Power one Reactivity unit.
+#		If risk averse, adjust PersonalStorage Desire parameter up by one Reactivity unit.
+#	If under hardship:
+#		If not risk averse, reduce least Desire by one Reactivity unit.
+#		If risk averse, repeatedly reduce Desires and Beliefs by one Reactivity unit in order of increasing Desire strength and 
+#			increasing Belief support for each Desire until run out of adjustment room or reach Satisfaction <= threshold violation allowance.
+#		If the above fails to produce Satisfaction <= TVA, repeatedly reduce CoreNeeds (except Physiological) one Reactivity unit 
+#			until run out of adjustment room or reach Satisfaction <= TVA.
+#	Record all adjustments in AgentData.
+#
+	import	copy
+#
+	global	MemoryTicks , AgentData , \
+			MostLikelyMaxEnergyConsumptiveParameterSet , MostToLeastDistance , MaximumLikelyEnergyClaim , ThresholdViolationAllowanceThisTick , \
+			ProsperityTrendThreshold , HardshipTrendThreshold , PersonalStorageToPowerConversionFactor , PowerToPersonalStorageConversionFactor , \
+			PrintFlow , TestSamplePrint
+#
+	if PrintFlow : print "      AssessAdjustActivationProfiles"
+#
+	for Agent in range ( 0 , len ( AgentData ) ) :
+#
+		AgentID														=	copy.deepcopy ( AgentData [ Agent ] [ 0 ] )
+		DemographicIdentity											=	copy.deepcopy ( AgentData [ Agent ] [ 1 ] )
+		WorldViewFilter												=	copy.deepcopy ( AgentData [ Agent ] [ 2 ] )
+		ActivationProfile											=	copy.deepcopy ( AgentData [ Agent ] [ 3 ] )
+		ClaimsData													=	copy.deepcopy ( AgentData [ Agent ] [ 4 ] )
+		AllocationsData												=	copy.deepcopy ( AgentData [ Agent ] [ 5 ] )
+		TransfersData												=	copy.deepcopy ( AgentData [ Agent ] [ 6 ] )
+		SatisfactionsData											=	copy.deepcopy ( AgentData [ Agent ] [ 7 ] )
+		TotalPersonalStorage										=	copy.deepcopy ( AgentData [ Agent ] [ 8 ] )
+#
+# Prepare data involved in various adjustments.
+#
+		SumSatisfactionValuesThisAgent								=	0
+		CountNegativeSatisfactionValues								=	0
+		CountPositiveSatisfactionValues								=	0
+		for WorldViewFilterIndex in range ( 0 , len ( WorldViewFilter  ) ) :
+			if WorldViewFilter [ WorldViewFilterIndex ] [ 0 ] == "Bias" and WorldViewFilter [ WorldViewFilterIndex ] [ 1 ] == "Memory Effect" :
+				MemoryEffectValue									=	WorldViewFilter [ WorldViewFilterIndex ] [ 2 ]
+		for SatisfactionIndex in range ( 0 , len ( SatisfactionsData ) ) :
+			MemoryEffectWeight										=	( len ( SatisfactionsData ) - SatisfactionIndex + 1 ) * MemoryEffectValue
+			SumSatisfactionValuesThisAgent							=	SumSatisfactionValuesThisAgent + MemoryEffectWeight * SatisfactionsData [ SatisfactionIndex ]
+			if float ( SatisfactionsData [ SatisfactionIndex ] ) < float ( -ThresholdViolationAllowanceThisTick ) :
+				CountNegativeSatisfactionValues						=	CountNegativeSatisfactionValues + 1
+			if float ( SatisfactionsData [ SatisfactionIndex ] ) > float ( ThresholdViolationAllowanceThisTick ) :
+				CountPositiveSatisfactionValues						=	CountPositiveSatisfactionValues + 1
+#
+		AllNeedsThisAgent											=	0
+		for WorldViewFilterIndex in range ( 0 , len ( WorldViewFilter ) ) :
+			if WorldViewFilter [ WorldViewFilterIndex ] [ 0 ] == "Bias" and WorldViewFilter [ WorldViewFilterIndex ] [ 1 ] == "Denial Effect" :
+				DenialEffectValue									=	WorldViewFilter [ WorldViewFilterIndex ] [ 2 ]
+			if WorldViewFilter [ WorldViewFilterIndex ] [ 0 ] == "Bias" and WorldViewFilter [ WorldViewFilterIndex ] [ 1 ] == "Memory Effect" :
+				MemoryEffectValue									=	WorldViewFilter [ WorldViewFilterIndex ] [ 2 ]
+			if WorldViewFilter [ WorldViewFilterIndex ] [ 0 ] == "Bias" and WorldViewFilter [ WorldViewFilterIndex ] [ 1 ] == "RiskAvoidance Effect" :
+				RiskAvoidanceValue									=	WorldViewFilter [ WorldViewFilterIndex ] [ 2 ]
+			if WorldViewFilter [ WorldViewFilterIndex ] [ 0 ] == "CoreNeed" :
+				AllNeedsThisAgent									=	AllNeedsThisAgent + WorldViewFilter [ WorldViewFilterIndex ] [ 2 ]
+				if WorldViewFilter [ WorldViewFilterIndex ] [ 1 ] == "Physiological" :
+					PhysiologicalNeed								=	WorldViewFilter [ WorldViewFilterIndex ] [ 2 ]
+#
+		DesireAdjustControlList										=	list ( )
+		DesireAdjustControlList										.   append ( ( "ArtificialMinimum" , - 100001 ) )
+		DesireAdjustControlList										.   append ( ( "ArtificialMaximum" , 100001 ) )
+		for ActivationProfileIndex in range ( 0 , len ( ActivationProfile ) ) :
+			if WorldViewFilter [ WorldViewFilterIndex ] [ 0 ] == "Desire" :
+				ParameterValue										=	ActivationProfile [ ActivationProfileIndex ] [ 2 ]
+				for ControlIndex in range ( 0 , len ( DesireAdjustControlList ) - 1 ) :
+					if DesireAdjustControlList [ ControlIndex ] [ 1 ] < ParameterValue <= DesireAdjustControlList [ ControlIndex + 1 ] [ 1 ] :
+						DesireAdjustControlList						.   insert ( ControlIndex , ( ActivationProfilendex , ParameterValue ) )
+		DesireAdjustControlList										.   pop ( 0 )
+		DesireAdjustControlList										.   pop ( len ( DesireAdjustControlList ) - 1 )
+#
+		BeliefAdjustContolList										=	list ( )
+		BeliefAdjustContolList										.   append ( ( "ArtificialMinimum" , - 100001 ) )
+		BeliefAdjustContolList										.   append ( ( "ArtificialMaximum" , 100001 ) )
+		for ActivationProfileIndex in range ( 0 , len ( ActivationProfile ) ) :
+			if ActivationProfile [ ActivationProfileIndex ] [ 0 ] == "Belief" :
+				ParameterValue										=	ActivationProfile [ ActivationProfileIndex ] [ 2 ]
+				for ControlIndex in range ( 0 , len ( BeliefAdjustContolList ) - 1 ) :
+					if BeliefAdjustContolList [ ControlIndex ] [ 1 ] < ParameterValue <= BeliefAdjustContolList [ ControlIndex + 1 ] [ 1 ] :
+						BeliefAdjustContolList						.   insert ( ControlIndex , (	ActivationProfileIndex , ParameterValue ) )
+		BeliefAdjustContolList										.   pop ( 0 )
+		BeliefAdjustContolList										.   pop ( len ( BeliefAdjustContolList ) - 1 )
+#
+		CoreNeedAdjustContolList									=	list ( )
+		CoreNeedAdjustContolList									.   append ( ( "ArtificialMinimum" , - 100001 ) )
+		CoreNeedAdjustContolList									.   append ( ( "ArtificialMaximum" , 100001 ) )
+		for ActivationProfileIndex in range ( 0 , len ( ActivationProfile ) ) :
+			if ActivationProfile [ ActivationProfileIndex ] [ 0 ] == "CoreNeed"  and ActivationProfile [ ActivationProfileIndex ] [ 0 ] != "Physiological" :
+				ParameterValue										=	ActivationProfile [ ActivationProfileIndex ] [ 2 ]
+				for ControlIndex in range ( 0 , len ( CoreNeedAdjustContolList ) - 1 ) :
+					if CoreNeedAdjustContolList [ ControlIndex ] [ 1 ] < ParameterValue <= CoreNeedAdjustContolList [ ControlIndex + 1 ] [ 1 ] :
+						CoreNeedAdjustContolList					.   insert ( ControlIndex , (	ActivationProfileIndex , ParameterValue ) )
+		CoreNeedAdjustContolList									.   pop ( 0 )
+		CoreNeedAdjustContolList									.   pop ( len ( CoreNeedAdjustContolList ) - 1 )
+#
+		ListOfAgentParameterTuples									=	GetListOfAgentParameterTuples ( Agent )
+		CurrentAgentToLeastDistance									=	float ( CalculateAgentToLeastDistance ( ListOfAgentParameterTuples ) )
+#
+		RequiredAgentToLeastDistance								=	CurrentAgentToLeastDistance * 	\
+																		float ( SatisfactionsData [ len ( SatisfactionsData ) - 1 ] ) * \
+																		float ( MostToLeastDistance ) / float ( MaximumLikelyEnergyClaim )
+		DistanceToMakeUp											=	CurrentAgentToLeastDistance - RequiredAgentToLeastDistance
+		if DistanceToMakeUp < 0 :
+			DistanceToMakeUp										=	- DistanceToMakeUp
+#
+		for WorldViewFilterIndex in range ( 0 , WorldViewFilterIndex ) :
+			if WorldViewFilter [ WorldViewFilterIndex ] [ 0 ] == "Reactivity" and WorldViewFIlter [ WorldViewFilterIndex ] [ 1 ] == "Adjustment when positive Satisfacton values" :
+				ReactivityUp										=	WorldViewFilter [ WorldViewFilterIndex ] [ 2 ]
+			if WorldViewFilter [ WorldViewFilterIndex ] [ 0 ] == "Reactivity" and WorldViewFIlter [ WorldViewFilterIndex ] [ 1 ] == "Adjustment when negative Satisfacton values" :
+				ReactivityDown										=	WorldViewFilter [ WorldViewFilterIndex ] [ 2 ]
+#
+		ProsperityHardshipIndicator									=	"Neutral"
+		if 	(	float ( SumSatisfactionValuesThisAgent ) < - float ( ThresholdViolationAllowanceThisTick ) * float ( 1 + DenialEffectValue ) and \
+				float ( TotalPersonalStorage ) < float ( AllNeedsThisAgent ) * float ( 1 - DenialEffectValue ) and \
+				float ( CountNegativeSatisfactionValues ) / float ( len ( SatisfactionData ) ) >= float ( HardshipTrendThreshold ) ) :
+			ProsperityHardshipIndicator								=	"Hardship"
+		elif (	SumSatisfactionValuesThisAgent > ThresholdViolationAllowanceThisTick and \
+				TotalPersonalStorage > AllNeedsThisAgent and \
+				float ( CountPositiveSatisfactionValues ) / float ( len ( SatisfactionsData ) ) >= float ( ProsperityTrendThreshold ) ) :
+			ProsperityHardshipIndicator								=	"Prosperity"
+# 
+# Determine which adjustments to apply, and apply them.
+#
+		if ProsperityHardshipIndicator == "Neutral" : # Do nothing.
+			pass
+#
+		if ProsperityHardshipIndicator == "Prosperity" :
+			if float ( RiskAvoidanceValue ) < 0.5 : # Convert sufficient TotalPersonalStorage into 1 unit of Power.
+				if float ( TotalPersonalStorage ) >= float ( PersonalStorageToPowerConversionFactor ) :
+					for ActivationProfileIndex in range ( 0 , len ( ActivationProfile ) ) :
+						if ActivationProfile [ ActiviationProfile ] [ 0 ] == "Power" :
+							CurrentPowerValue						=	ActivationProfile [ ActivationProfileIndex ] [ 2 ]
+					for PDFIndex in range ( 0 , len ( PDFSpec ) ) :
+						if PDFSpec [ PDFIndex ] [ 0 ] == "Power" :
+							MaximumPowerValue						=	PDFSpec [ PDFIndex ] [ 2 ] [ 1 ]
+					NewPowerValue									=	int ( round ( float ( min ( MaximumPowerValue , CurrentPowerValue + 1 ) ) ) )
+					ActivationProfile								.   insert (	ActivationProfileIndex , \
+																					(	ActivationProfile [ ActivationProfileIndex ] [ 0 ] , \
+																						ActivationProfile [ ActivationProfileIndex ] [ 1 ] , \
+																						NewPowerValue ) )
+					ActivationProfile								.   pop ( ActivationProfileIndex + 1 )
+					TotalPersonalStorage							=	TotalPersonalStorage - PersonalStorageToPowerConversionFactor
+			else : # Reduce by 1 the Desire paramter value associated with retirement.
+				for ActivationProfileIndex in range ( 0 , len ( ActivationProfile ) ) :
+					if	ActivationProfile [ ActiviationProfile ] [ 0 ] == "Desire" and \
+						ActivationProfile [ ActiviationProfile ] [ 1 ] == "Degree of comfort in retirement" :
+						CurrentDesireValue							=	ActivationProfile [ ActivationProfileIndex ] [ 2 ]
+				for PDFIndex in range ( 0 , len ( PDFSpec ) ) :
+					if PDFSpec [ PDFIndex ] [ 0 ] == "Desire" and PDFSpec [ PDFIndex ] [ 1 ] ==  "Degree of comfort in retirement" :
+						MinimumPowerValue							=	PDFSpec [ PDFIndex ] [ 2 ] [ 0 ]
+				NewDesireValue										=	int ( round ( float ( max ( MinimumPowerValue , CurrentDesireValue - 1 ) ) ) )
+				ActivationProfile									.   insert (	ActivationProfileIndex , \
+																					(	ActivationProfile [ ActivationProfileIndex ] [ 0 ] , \
+																						ActivationProfile [ ActivationProfileIndex ] [ 1 ] , \
+																						NewDesireValue ) )
+				ActivationProfile									.   pop ( ActivationProfileIndex + 1 )
+#
+		if ProsperityHardshipIndicator == "Hardship" :
+			if float ( RiskAvoidanceValue ) < 0.5 : # Reduce the lowest-value Desire by 1 ReactivityDown.
+				LeastDesireIndex									=	DesireAdjustControlList [ 0 ]
+				LeastDesireValue									=	ActivationProfile [ LeastDesireIndex ] [ 2 ]
+				for PDFIndex in range ( 0 , len ( PDFSpec ) ) :
+					if PDFSpec [ PDFIndex ] [ 0 ] == ActivationProfile [ LeastDesireIndex ] [ 0 ] and PDFSpec [ PDFIndex ] [ 1 ] == ActivationProfile [ LeastDesireIndex ] [ 1 ] :
+						MinimumDesireValue							=	DFSpec [ PDFIndex ] [ 2 ] [ 0 ]
+				NewDesireValue										=	int ( round ( float ( max ( MinimumDesireValue , LeastDesireValue - ReactivityDown ) ) ) )
+				ActivationProfile									.   insert ( (	ActivationProfile [ LeastDesireIndex ] [ 0 ] , \
+																					ActivationProfile [ LeastDesireIndex ] [ 1 ] , \
+																					NewDesireValue ) )
+				ActivationProfile									.   pop ( LeastDesireIndex + 1 )
+			else : # Cycle through all Desires and Beliefs in increasing order of their values; stop when Satisfaction <= TVA.
+				MoreBeliefAdjustmentNeeded							=	False
+				for BeliefIndex in range ( 0 , len ( BeliefAdjustControlList ) ) :
+					if MoreBeliefAdjustmentNeeeded :
+						MoreDesireAdjustmentNeeded					=	True
+						for DesireIndex in range ( 0 , len ( DesireAdjustControlList ) ) :
+							if MoreDesireAdjustmentNeeded :
+								DesireParameterValue				=	DesireAdjustControlList [ DesireIndex ] [ 1 ]
+								for FindIndex in range ( 0 , len ( MostLikelyMaxEnergyConsumptiveParameterSet ) ) :
+									if	MostLikelyMaxEnergyConsumptiveParameterSet [ FindIndex ] [ 0 ] == ActivationProfile [ DesireAdjustControlList [ DesireIndex ] [ 0 ] ] [ 0 ] and \
+										MostLikelyMaxEnergyConsumptiveParameterSet [ FindIndex ] [ 1 ] == ActivationProfile [ DesireAdjustControlList [ DesireIndex ] [ 0 ] ] [ 1 ] :
+										MinMaxThisDesireParameter	=	MostLikelyMaxEnergyConsumptiveParameterSet [ FindIndex ] [ 2 ]
+								for FindIndex in range ( 0 , len ( PDFSpec ) ) :
+									if	PDFSpec [ FindIndex ] [ 0 ] == ActivationProfile [ DesireAdjustControlList [ DesireIndex ] [ 0 ] ] [ 0 ] and \
+										PDFSpec [ FindINdex ] [ 1 ] == ActivationProfile [ DesireAdjustControlList [ DesireIndex ] [ 0 ] ] [ 1 ] :
+										MinimumParameterValue		=	PDFSpec [ FindIndex ] [ 2 ] [ 0 ]
+										MaximumParameterValue		=	PDFSpec [ FindIndex ] [ 2 ] [ 1 ]
+								if MinMaxThisDesireParameter == "Min" :
+									DesireParameterValue			=	int ( round ( float ( min ( DesireParameterValue * ( 1 + ReactivityUp ) , MaximumParameterValue ) ) ) )
+								else :
+									DesireParameterValue			=	int ( round ( float ( max ( DesireParameterValue * ( 1 - ReactivityDown ) , MinimumParameterValue ) ) ) )
+								ActivationProfile					.   insert (	DesireAdjustControlList [ DesireIndex ] [ 0 ] , \
+																					( 	ActivationProfile [ DesireAdjustControlList [ DesireIndex ] [ 0 ] ] [ 0 ] , \
+																						ActivationProfile [ DesireAdjustControlList [ DesireIndex ] [ 0 ] ] [ 1 ] , \
+																						DesireParameterValue ) )
+								ActivationProfile					.   pop ( DesireAdjustControlList [ DesireIndex ] [ 0 ] + 1 )
+								ListOfAgentParameterTuples			=	GetListOfAgentParameterTuples ( Agent )
+								AgentToLeastDistance				=	CalculateAgentToLeastDistance ( ListOfAgentParameterTuples )
+								DistanceDifference					=	RequiredAgentToLeastDistance - AgentToLeastDistance
+								if DistanceDifference < 0 :
+									DistanceDifference				=	- DistanceDifference
+								if	DistanceDifference <= DistanceToMakeUp :
+									MoreDesireAdjustentNeeded		=	False
+						if MoreDesireAdjustmentNeeded :
+							MoreBeliefAdjusgtmentNeeded				=	True
+						BeliefParameterValue						=	BeliefAdjustControlList [ BeliefIndex ] [ 1 ]
+						for FindIndex in range ( o , len ( MostLikelyMaxEnergyConsumptiveParameterSet ) ) :
+							if	MostLikelyMaxEnergyConsumptiveParameterSet [ FindIndex ] [ 0 ] == ActivationProfile [ BeliefAdjustControlList [ BeliefIndex ] [ 0 ] ] [ 0 ] and \
+								MostLikelyMaxEnergyConsumptiveParameterSet [ FindIndex ] [ 1 ] == ActivationProfile [ BeliefAdjustControlList [ BeliefIndex ] [ 0 ] ] [ 1 ] :
+								MinMaxThisBeliefParameter			=	MostLikelyMaxEnergyConsumptiveParameterSet [ FindIndex ] [ 2 ]
+						for FindIndex in range ( 0 , len ( PDFSpec ) ) :
+							if	PDFSpec [ FindIndex ] [ 0 ] == ActivationProfile [ DesireAdjustControlList [ DesireIndex ] [ 0 ] ] [ 0 ] and \
+								PDFSpec [ FindINdex ] [ 1 ] == ActivationProfile [ DesireAdjustControlList [ DesireIndex ] [ 0 ] ] [ 1 ] :
+								MinimumParameterValue				=	PDFSpec [ FindIndex ] [ 2 ] [ 0 ]
+								MaximumParameterValue				=	PDFSpec [ FindIndex ] [ 2 ] [ 1 ]
+						if MinMaxThisBeliefParameter == "Min" :
+							BeliefParameterValue					=	int ( round ( float ( min ( BeliefParameterValue * ( 1 + ReactivityUp ) , MaximumParameterValue ) ) ) )
+						else :
+							BeliefParameterValue					=	int ( round ( float ( max ( BeliefParameterValue * ( 1 - ReactivityDown ) , MinimumParameterValue ) ) ) )
+						ActivationProfile							.   insert (	BeliefAdjustControlList [ BeliefIndex ] [ 0 ] , \
+																					( 	ActivationProfile [ BeliefAdjustControlList [ BeliefIndex ] [ 0 ] ] [ 0 ] , \
+																						ActivationProfile [ BeliefAdjustControlList [ BeliefIndex ] [ 0 ] ] [ 1 ] , \
+																						BeliefParameterValue ) )
+						ActivationProfile							.   pop ( DesireAdjustControlList [ DesireIndex ] [ 0 ] + 1 )
+						ListOfAgentParameterTuples					=	GetListOfAgentParameterTuples ( Agent )
+						AgentToLeastDistance						=	CalculateAgentToLeastDistance ( ListOfAgentParameterTuples )
+						DistanceDifference							=	RequiredAgentToLeastDistance - AgentToLeastDistance
+						if DistanceDifference < 0 :
+							DistanceDifference						=	- DistanceDifference
+						if DistanceDifference <= DistanceToMakeUp :
+							MoreBeliefAdjustmentRequired			=	False
+#
+				if MoreBeliefAdjustmentNeeded :
+					NeedAdjustment									=	True
+					for NeedIndex in range ( 0 , len ( CoreNeedAdjustControlList ) ) :
+						NeedParameterValue							=	CoreNeedAdjustControlList [ DesireIndex ] [ 1 ]
+						for FindIndex in range ( 0 , len ( MostLikelyMaxEnergyConsumptiveParameterSet ) ) :
+							if	MostLikelyMaxEnergyConsumptiveParameterSet [ FindIndex ] [ 0 ] == ActivationProfile [ DesireAdjustControlList [ DesireIndex ] [ 0 ] ] [ 0 ] and \
+								MostLikelyMaxEnergyConsumptiveParameterSet [ FindIndex ] [ 1 ] == ActivationProfile [ DesireAdjustControlList [ DesireIndex ] [ 1 ] ] [ 1 ] :
+								MinMaxThisDesireParameter			=	MostLikelyMaxEnergyConsumptiveParameterSet [ FindIndex ] [ 2 ]
+						for FindIndex in range ( 0 , len ( PDFSpec ) ) :
+							if	PDFSpec [ FindIndex ] [ 0 ] == ActivationProfile [ DesireAdjustControlList [ DesireIndex ] [ 0 ] ] [ 0 ] and \
+								PDFSpec [ FindINdex ] [ 1 ] == ActivationProfile [ DesireAdjustControlList [ DesireIndex ] [ 0 ] ] [ 1 ] :
+								MinimumParameterValue				=	PDFSpec [ FindIndex ] [ 2 ] [ 0 ]
+								MaximumParameterValue				=	PDFSpec [ FindIndex ] [ 2 ] [ 1 ]
+						if MinMaxThisDesireParameter == "Min" :
+							NeedParameterValue						=	int ( round ( float ( min ( NeedParameterValue * ( 1 + ReactivityUp ) , MaximumParameterValue ) ) ) )
+						else :
+							NeedParameterValue						=	int ( round ( float ( max ( NeedParameterValue * ( 1 - ReactivityDown ) , MinimumParameterValue ) ) ) )
+						ActivationProfile							.   insert (	NeedAdjustControlList [ NeedIndex ] [ 0 ] , \
+																					( 	ActivationProfile [ NeedreAdjustControlList [ NeedIndex ] [ 0 ] ] [ 0 ] , \
+																						ActivationProfile [ NeedAdjustControlList [ NeedIndex ] [ 0 ] ] [ 1 ] , \
+																						NeedParameterValue ) )
+						ActivationProfile							.   pop ( NeedAdjustControlList [ NeedIndex ] [ 0 ] + 1 )
+						ListOfAgentParameterTuples					=	GetListOfAgentParameterTuples ( Agent )
+						AgentToLeastDistance						=	CalculateAgentToLeastDistance ( ListOfAgentParameterTuples )
+						DistanceDifference							=	RequiredAgentToLeastDistance - AgentToLeastDistance
+						if DistanceDifference < 0 :
+							DistanceDifference						=	- DistanceDifference
+						if DistanceDifference <= DistanceToMakeUp :
+							MoreNeedAdjustmentNeeded				=	False
+# If reach here, have not achieved Satisfaction < TVA, so Agent may need to marked for Death in Adjust Population by virtue of persistent shortfall on CoreNeeds.
+				if CountNegativeSatisfactionValues >= MemoryTicks :
+						AgentID										=	- AgentID
+# Register new parameters in AgentData.
+		AgentData													.   insert ( Agent , [	AgentID , DemographicIdentity , WorldViewFilter , ActivationProfile , \
+																							ClaimsData , AllocationsData , TransfersData , SatisfactionsData , TotalPersonalStorage ] )
+		AgentData													.   pop ( Agent + 1 )
+#
+	if TestSamplePrint : ShowTestSample ( "AssessAdjustWorldViewComplete" )
+
+def GetListOfAgentParameterTuples ( Agent ) :
+#
+# This function assembles the list of current WorldViewFIlter and ActivationProfile data tuples.
+#
+	import	copy
+#
+	global	AgentData
+#
+	WorldViewFilter													=	copy.deepcopy ( AgentData [ Agent ] [ 2 ] )
+	ActivationProfile												=	copy.deepcopy ( AgentData [ Agent ] [ 3 ] )
+#
+	ListOfAgentParameterTuples										=	list ( )
+	for ParameterIndex in range ( 0 , len ( WorldViewFilter ) ) :
+		ListOfAgentParameterTuples									.   append ( WorldViewFilter [ ParameterIndex ] )
+	for ParameterIndex in range ( 0 , len ( ActivationProfile ) ) :
+		ListOfAgentParameterTuples									.   append ( ActivationProfile [ ParameterIndex ] )
+	return ListOfAgentParameterTuples
+
+def CalculateAgentToLeastDistance ( ListOfAgentParameterTuples ) :
+#
+# This function calculate the 'distance' between the Agent's parameter set and that of the putative least-consumptive parameter set
+#
+	global	PDFSpec , MostLikelyMaxEnergyConsumptiveParameterSet
+#
+	AgentToLeastDistance							=	0
+	for TupleIndex in range ( 0 , len ( ListOfAgentParameterTuples ) ) :
+		AgentParameterValue							=	ListOfAgentParameterTuples [ TupleIndex ] [ 2 ]
+		for PDFIndex in range ( 0 , len ( PDFSpec ) ) :
+			if	ListOfAgentParameterTuples [ TupleIndex ] [ 0 ] == PDFSpec [ PDFIndex ] [ 0 ] and \
+				ListOfAgentParameterTuples [ TupleIndex ] [ 1 ] == PDFSpec [ PDFIndex ] [ 1 ] :
+				LeastIndex							=	0
+				if MostLikelyMaxEnergyConsumptiveParameterSet [ PDFIndex ] [ 2 ] == "Min" :
+					LeastIndex						=	1
+				AgentToLeastDistance				=	AgentToLeastDistance + \
+														( AgentParameterValue - PDFSpec [ PDFIndex ] [ 2 ] [ LeastIndex ] ) ** 2
+	AgentToLeastDistance							=	AgentToLeastDistance ** 0.5
+	return AgentToLeastDistance
+
+def AdjustPopulation ( ) :
+#
+# This function increases, decreases, or modifies the Agent population as indicated by various flags.
+#
+	import	copy
+	import	random
+#
+	global	SimulationTick , AgentData , MaxAgentID , MaturityAge , MaximumAge , NumberOfMalesByAge , NumberOfFemalesByAGe , BirthRate , PregnancyDelayTicks , MaxPreganantAge , \
+			ThoughtLeaders , \
+			PrintFlow , TestSamplePrint
+#
+	if PrintFlow : print "      AdjustPopulation"
+#
+	RemoveList 											=	list ( )
+	AddList 											=	list ( )
+	NumberOfPregnanciesRequiredThisTick 				=	int ( round ( float ( len ( AgentData ) ) * float ( BirthRate ) , 0 ) )
+	NumberOfPregnanciesAssignedThisTick 				=	0
+	for Agent in range ( 0, len ( AgentData ) ) :
+		AgentID											=	copy.deepcopy ( AgentData [ Agent ] [ 0 ] )
+		DemographicIdentity								=	copy.deepcopy ( AgentData [ Agent ] [ 1 ] )
+		Age												=	copy.deepcopy ( AgentData [ Agent ] [ 1 ] [ 0 ] )
+		Gender											=	copy.deepcopy ( AgentData [ Agent ] [ 1 ] [ 1 ] )
+		PregnancyStatus									=	copy.deepcopy ( AgentData [ Agent ] [ 1 ] [ 2 ] )
+		AffinitiesData									=	copy.deepcopy ( AgentData [ Agent ] [ 1 ] [ 3 ] )
+		ThoughtLeaderStatus								=	copy.deepcopy ( AgentData [ Agent ] [ 1 ] [ 4 ] )
+		WorldViewFilter									=	copy.deepcopy ( AgentData [ Agent ] [ 2 ] )
+		ActivationProfile								=	copy.deepcopy ( AgentData [ Agent ] [ 3 ] )
+		ClaimsData										=	copy.deepcopy ( AgentData [ Agent ] [ 4 ] )
+		AllocationsData									=	copy.deepcopy ( AgentData [ Agent ] [ 5 ] )
+		TransfersData									=	copy.deepcopy ( AgentData [ Agent ] [ 6 ] )
+		SatisfactionData								=	copy.deepcopy ( AgentData [ Agent ] [ 7 ] )
+		TotalPersonalStorage							=	copy.deepcopy ( AgentData [ Agent ] [ 8 ] )
+# Age all Agents; adjust preganancy delay indicator and make some Agents ThoughtLeaders upon reaching Maturity.
+		Age												=	Age + 1
+		if PregnancyStatus < 0 :
+			PregnancyStatus								=	PregnancyStatus + 1
+		if Age == MaturityAge :
+			ThoughtLeaderData 							=	False
+			if ThoughtLeaderFraction > random.random( ) :
+				ThoughtLeaderData						=	True
+				ThoughtLeaders							.	append ( AgentID )
+# Birth newborns.
+		if PregnancyStatus == 1 :
+			AddList										.	append ( (	Agent , AgentID	, DemographicIdentity , WorldViewFilter , ActivationProfile , \
+																				ClaimsData , AllocationsData , TransfersData , SatisfactionsData , TotalPersonalStorage ) )
+# Make some Agents pregnant.
+		if NumberOfPregnanciesAssignedThisTick <= NumberOfPregnanciesRequiredThisTick :
+			if Gender == "Female" and MaxPregnantAge >= Age >= MaturityAge and PregnancyStatus == 0 :
+				if random.random ( ) <= BirthRate : 
+					PregnancyStatus 					=	1
+				 	NumberOfPregnanciesAssignedThisTick =	NumberOfPregnanciesAssignedThisTick + 1
+# Prepare to remove some Agents; avoid duplicates.
+		if AgentID < 0 : # Death by persistent Needs shortfall.
+			RemoveList									.	append ( ( - AgentID , "Needs" ) )
+		elif random.random ( ) <= DeathRate : # Death by statistics.
+			RemoveList									.	append ( ( AgentID , "Stats" ) )
+		elif Age > MaximumAge : # Death by old age.
+			RemoveList									.	append ( ( AgentID , "Age" ) )
+#
+	for RemoveIndex in range (  0 , len ( RemoveList ) ) :
+		DeleteAgentID									=	RemoveList [ RemoveIndex ] [ 0 ]
+		DeleteAgentIndex								=	FindAgentFromAgentID ( DeleteAgentID )
+		DeleteAgent ( DeleteAgentIndex )
+		if ThoughtLeaderData == True :
+			for ThoughtLeaderIndex in range ( 0 , len ( ThoughtLeaders ) ) :
+				if ThoughtLeaders [ ThoughtLeaderIndex ] == AgentID :
+					ThoughtLeaders						.	pop ( ThoughtLeaderIndex )
+#
+	for AddIndex in range ( 0 , len ( AddList ) ) :
+#
+		MothersNewDemographicIdentity					=	( Age , "Female" , - PregnancyDelayTicks , AffinitiesData , ThoughtLeaderStatus )
+		MothersNewData									=	list ( )
+		MothersNewData									=	[ 	AddList [ AddIndex ] [ 1 ] , MothersNewDemographicIdentity , AddList [ AddIndex ] [ 2 ] , AddList [ AddIndex ] [ 3 ] , \
+																AddList [ AddIndex ] [ 4 ] , AddList [ AddIndex ] [ 5 ] , AddList [ AddIndex ] [ 6 ] , AddList [ AddIndex ] [ 7 ] , \
+																AddList [ AddIndex ] [ 9 ] ]
+		MothersAgentDataIndex							=	AddList [ AddIndex ] [ 0 ]
+		AgentData										.	insert ( MothersAgentDataIndex , MothersNewData )
+		AgentData										.	pop ( MothersAgentDataIndex + 1 )
+# Prepare newborn's data for CreateNewAgent ( ).
+		NewBornAgentID									=	MaxAgentID + 1
+		MaxAgentID										=	MaxAgentID + 1
+		NewBornAge										=	0
+		NewBornGender 									=	"Female" # Default.
+		NewBornPregnancyStatus							=	0
+		if random.random  ( ) > float ( NumberOfMalesByAge [ MothersAge ] ) / ( float ( NumberOfMalesByAge [ MothersAge ] ) + float( NumberOfFemalesByAge [ MothersAge ] ) ) :
+			NewBornsGender								=	"Male"
+			PregnancyStatus								=	"Never"
+		NewBornThoughtLeaderStatus						=	"False"
+		NewBornDemographicIdentity						=	( NewBornAge, NewBornGender , NewBornsPregnancyStatus , NewBornThoughtLeaderStatus )
+		NewBornWorldViewFilter							=	MothersNewData [ 2 ]
+		NewBornThoughtLeaderData						=	MothersNewData [ 3 ]
+		NewBornActivationProfile						=	MothersNewData [ 4 ]
+		NewBornClaimsData								=	MothersNewData [ 5 ] # ??????????????????????????
+		NewBornAllocationsData							=	MothersNewData [ 6 ] # ??????????????????????????
+		NewBornTransfersData							=	MothersNewData [ 7 ] # ??????????????????????????
+		NewBoarnSatisfactionsData						=	MothersNewData [ 8 ] # ??????????????????????????
+		NewBornTotalPersonalStorage						=	MothersNewData [ 9 ] # ??????????????????????????
+		CreateAgent (	NewBornAgentID , NewBornDemographicIdentity , NewBornWorldViewFilter , NewBornActivationProfile , \
+						NewBornClaimsData , NewBornAllocationsData , NewBornTransfersData , NewBornSatisfactionsData , NewBornTotalPersonalStorage )
+#
+	if TestSamplePrint : ShowTestSample ( "AdjustPopulationComplete" )
+
+def CreateAgent (	AgentID	, DemographicIdentity , WorldViewFilter , ActivationProfile , \
+					ClaimsData , AllocationsData , TransfersData , SatisfactionsData , TotalPersonalStorage ) :
+#
+# This function avoids sorting AgentData by Power (an N^2 process) by inserting a new Agent record at a randomly-chosen location in the appropriate Power block.
+# PowerBlock beginning and end data is maintained in PowerBlockData.
+#
+	import	random
+	import	copy
+#
+	global	AgentData , PDFSpec , PowerBlockData , \
+			NumAgentsCreatedOverSimulation , \
+			PrintFlow , TestSamplePrint
+#
+	DataToInsert					=	list ( )
+	DataToInsert					= 	[	AgentID	, DemographicIdentity , WorldViewFilter , ActivationProfile , \
+											ClaimsData , AllocationsData , TransfersData , SatisfactionsData , TotalPersonalStorage ]
+#
+	for BDPIndex in range ( 0 , len ( ActivationProfile ) ) :
+		if 	ActivationProfile [ BDPIndex ] [ 0 ] == "Power" and ActivationProfile [ BDPIndex ] [ 1 ] == "Order of access to EnergySupply" :
+			AgentPowerLevel			=	ActivationProfile [ BDPIndex ] [ 2 ]
+#
+	NewPowerBlockData				=	list ( )
+	for PowerIndex in range ( 0 , AgentPowerLevel ) :
+		DataToAppend				=	[ ]
+		if PowerBlockData [ PowerIndex ] != [ ] :
+			DataToAppend			=	[ PowerBlockData [ PowerIndex ] [ 0 ] , PowerBlockData [ PowerIndex ] [ 1 ] ]
+		NewPowerBlockData			.   append ( DataToAppend )
+	for PowerIndex in range ( AgentPowerLevel , len ( PowerBlockData ) ) :
+		PowerDataItem				=	list ( )
+		PowerDataItem				=	[ ]
+		if PowerBlockData [ PowerIndex ] != [ ] and PowerIndex == AgentPowerLevel :
+			StartPowerIndex 		=	PowerBlockData [ PowerIndex ] [ 0 ]
+			EndPowerIndex			=	PowerBlockData [ PowerIndex ] [ 1 ] + 1
+			PowerDataItem			=	[ StartPowerIndex , EndPowerIndex ]
+		if PowerBlockData [ PowerIndex ] == [ ] and PowerIndex == AgentPowerLevel :
+			StartPowerIndex			=	FindFirstPriorEndIndex ( PowerIndex ) + 1
+			EndPowerIndex			=	StartPowerIndex
+			PowerDataItem			=	[ StartPowerIndex , EndPowerIndex ]
+		if PowerBlockData [ PowerIndex ] != [ ] and PowerIndex > AgentPowerLevel :
+			StartPowerIndex 		=	PowerBlockData [ PowerIndex ] [ 0 ] + 1
+			EndPowerIndex			=	PowerBlockData [ PowerIndex ] [ 1 ] + 1
+			PowerDataItem			=	[ StartPowerIndex , EndPowerIndex ]
+		if PowerBlockData [ PowerIndex ] == [ ] and PowerIndex > AgentPowerLevel :
+			pass
+		NewPowerBlockData			.   append ( PowerDataItem )
+		if PowerIndex == AgentPowerLevel :
+			InsertIndex				=	random.randint ( StartPowerIndex , EndPowerIndex )
+			AgentData				.	insert ( InsertIndex , DataToInsert )
+	PowerBlockData					=	copy.deepcopy ( NewPowerBlockData )
+
+def FindFirstPriorEndIndex ( Index ) :
+#
+# This function finds the lowest index value in PowerBlockData.
+#
+	import	random
+#
+	global	PowerBlockData , \
+			PrintFlow , TestSamplePrint
+#
+	if PowerBlockData [ Index ] == [ ] :
+		if Index == 0 : return -1
+		else : return FindFirstPriorEndIndex ( Index - 1 )
+	else :
+		if Index == 0 : return PowerBlockData [ 0 ] [ 1 ]
+		else: return PowerBlockData [ Index ] [ 1 ]
+
+def DeleteAgent ( DeleteAgentIndex ) :
+#
+# This function deletes the Agent-th row from AgentData and updates PowerBlockData and InBox accordingly.
+#
+	import	copy
+#
+	global	AgentData , PowerBlockData , InBox , \
+			PrintFlow , TestSamplePrint
+#
+	for ActivationProfileIndex in range ( 0 , len ( AgentData [ DeleteAgentIndex ] [ 3 ] ) ) :
+		if AgentData [ DeleteAgentIndex ] [ 3 ] [ ActivationProfileIndex ] [ 0 ] == "Power" :
+			AgentPowerIndex			= 	AgentData [ DeleteAgentIndex ] [ 3 ] [ ActivationProfileIndex ] [ 2 ]
+#
+	NewPowerBlockData				=	list ( )
+	for PowerIndex in range ( 0 , AgentPowerIndex ) :
+		NewPowerBlockData			.   append ( PowerBlockData [ PowerIndex ] )
+	for PowerIndex in range ( AgentPowerIndex , len ( PowerBlockData ) ) :
+		if PowerBlockData [ PowerIndex ] == [ ] and PowerIndex == AgentPowerIndex :
+			DataToAppend			=	[ "error" , "error" ] # Should never happen.
+		if PowerBlockData [ PowerIndex ] != [ ] and PowerIndex == AgentPowerIndex :
+			DataToAppend			=	[ ]
+			if PowerBlockData [ PowerIndex ] [ 0 ] < PowerBlockData [ PowerIndex ] [ 1 ] :
+				StartPowerIndex 	=	PowerBlockData [ PowerIndex ] [ 0 ]
+				EndPowerIndex		=	PowerBlockData [ PowerIndex ] [ 1 ] - 1
+				DataToAppend		=	[ StartPowerIndex , EndPowerIndex ]
+		if PowerBlockData [ PowerIndex ] == [ ] and PowerIndex != AgentPowerIndex :
+			DataToAppend			=	[ ]
+		if PowerBlockData [ PowerIndex ] != [ ] and PowerIndex != AgentPowerIndex :
+			StartPowerIndex 		=	PowerBlockData [ PowerIndex ] [ 0 ] - 1
+			EndPowerIndex			=	PowerBlockData [ PowerIndex ] [ 1 ] - 1
+			DataToAppend			=	[ StartPowerIndex , EndPowerIndex ]
+		NewPowerBlockData			.   append ( DataToAppend )
+	PowerBlockData					=	copy.deepcopy ( NewPowerBlockData )
+#
+	AgentID							=	AgentData [ DeleteAgentIndex ] [ 0 ]
+	NewInBox						=	list ( )
+	NewInBox						=	copy.deepcopy ( InBox )
+	for InBoxIndex in range ( 0 , len ( InBox ) ) :
+		if InBox [ InBoxIndex ] [ 0 ] != AgentID and InBox [ InBoxIndex ] [ 1 ] != AgentID :
+			NewInBox				.	append ( InBox [ InBoxIndex ] )
+	InBox							=	copy.deepcopy ( NewInBox)
+	AgentData						.   pop ( DeleteAgentIndex )
+
+def ShowTestSample ( Waypoint ) :
+#
+# This function displays the status of a Sample AgentIDs, the calling location given by Waypoint within function and Indicator (more detail).
+#
+	global	AgentData , PowerBlockData , CommunityStorage , BaselineEnergies , \
+			SampleAgentIDs
+#
+	for SampleIndex in range ( 0 , len ( SampleAgentIDs ) ) :
+		AgentID		=	SampleAgentIDs [ SampleIndex ]
+		Agent		=	FindAgentFromAgentID ( AgentID )
+		print "         CommunityStorage:" , int ( CommunityStorage )
+		print "         Test Sample for AgentID ="		,	AgentID  , "( Agent =" , Agent , ") at Waypoint =" , Waypoint
+		print "            Age:"						,	AgentData [ Agent ] [ 1 ] [ 0 ]
+		print "            Gender:"						,	AgentData [ Agent ] [ 1 ] [ 1 ]
+		print "            PregnancyStatus:"			,	AgentData [ Agent ] [ 1 ] [ 2 ]
+		print "            Affinities:"					,	AgentData [ Agent ] [ 1 ] [ 3 ]
+		print "            ThoughtLeaderStatus:"		,	AgentData [ Agent ] [ 1 ] [ 4 ]
+		print "            PDFValues:"
+		for Index in range ( 0 , len ( AgentData [ Agent ] [ 2 ] ) ) :
+			print "              "						,	AgentData [ Agent ] [ 2 ] [ Index ] [ 0 ] , AgentData [ Agent ] [ 2 ] [ Index ] [ 1 ] , AgentData [ Agent ] [ 2 ] [ Index ] [ 2 ]
+		for Index in range ( 0 , len ( AgentData [ Agent ] [ 3 ] ) ) :
+			print "              "						,	AgentData [ Agent ] [ 3 ] [ Index ] [ 0 ] , AgentData [ Agent ] [ 3 ] [ Index ] [ 1 ] , AgentData [ Agent ] [ 3 ] [ Index ] [ 2 ]
+		print "            FirstTickEnergy:" 			,	BaselineEnergies [ Agent ]
+		print "            Claims:"						,	AgentData [ Agent ] [ 4 ]
+		print "            Allocations:"				,	AgentData [ Agent ] [ 5 ]
+		print "            Transfers:"					,	AgentData [ Agent ] [ 6 ]
+		print "            Satisfactions:"				,	AgentData [ Agent ] [ 7 ]
+		print "            TotalPersonalStorage:"		,	AgentData [ Agent ] [ 8 ]
+		print "            PowerBLock:"					,	PowerBlockData
+		
+def FindAgentFromAgentID ( AgentID ) :
+#
+# This function sets Agent to the row in AgentData that has AgentID as the [ 0 ]-th element.
+#
+	global	AgentData
+#
+	for Agent in range ( 0 , len ( AgentData ) ) :
+		if AgentData [ Agent ] [ 0 ] == AgentID :
+			return Agent
+
+def DisplayWorld ( ) :
+#
+# This function displays the status of EnergyWorld at the end of each Simulation Tick.
+#
+	global	AgentData , \
+			PrintFlow
+#
+	if PrintFlow : print "      DisplayWorld"
+#
+	pass
+
+Main ( )
